@@ -51,6 +51,7 @@ export default async function GamesPage({ searchParams }: PageProps) {
           gameTypes: [],
           gameItemTypes: [],
           sponsors: [],
+          locations: [],
         },
       ];
 
@@ -66,6 +67,7 @@ export default async function GamesPage({ searchParams }: PageProps) {
         gameTypes={options.gameTypes}
         gameItemTypes={options.gameItemTypes}
         sponsors={options.sponsors}
+        locations={options.locations}
       />
 
       <Card>
