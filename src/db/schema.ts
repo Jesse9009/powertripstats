@@ -38,6 +38,11 @@ export const sponsors = sqliteTable("sponsors", {
   name: text("name").notNull(),
 });
 
+export const locations = sqliteTable("locations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // Core game tables
 // ---------------------------------------------------------------------------
@@ -53,6 +58,7 @@ export const games = sqliteTable("games", {
     .notNull()
     .references(() => initialCombinations.id),
   notes: text("notes"),
+  locationId: integer("location_id").references(() => locations.id),
 });
 
 export const gameGameTypes = sqliteTable(
@@ -227,6 +233,9 @@ export type NewGameItemType = typeof gameItemTypes.$inferInsert;
 
 export type Sponsor = typeof sponsors.$inferSelect;
 export type NewSponsor = typeof sponsors.$inferInsert;
+
+export type Location = typeof locations.$inferSelect;
+export type NewLocation = typeof locations.$inferInsert;
 
 export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
