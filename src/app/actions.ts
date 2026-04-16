@@ -22,7 +22,7 @@ import {
   playerPrizeBeneficiaries,
   sponsors,
 } from '@/db/schema';
-import { asc, count, desc, eq, sql } from 'drizzle-orm';
+import { asc, count, desc, eq, sql, and } from 'drizzle-orm';
 import { z } from 'zod';
 
 const db = getDb();
@@ -608,4 +608,175 @@ export async function addGame(data: AddGameInput) {
 
     return { success: false, error: 'Failed to add game' };
   }
+}
+
+export async function getGameById(gameId: number) {
+  if (!db) return null;
+
+  // Game basic info
+  const game = await db
+    .select({
+      id: games.id,
+      gameNumber: games.gameNumber,
+      gameDate: games.gameDate,
+      notes: games.notes,
+      hostFirstName: participants.firstName,
+      hostLastName: participants.lastName,
+      hostNickname: participants.nickname,
+      initialsCombination: initialCombinations.combination,
+    })
+    .from(games)
+    .innerJoin(participants, eq(games.hostParticipantId, participants.id))
+    .innerJoin(initialCombinations, eq(games.initialCombinationId, initialCombinations.id))
+    .where(eq(games.id, gameId))
+    .limit(1);
+
+  if (!game[0]) return null;
+
+  // Fetch players with sponsors
+  const gamePlayersData = await db
+    .select({
+      playerId: gamePlayers.playerId,
+      firstName: participants.firstName,
+      lastName: participants.lastName,
+      nickname: participants.nickname,
+      sponsorId: gamePlayerSponsors.sponsorId,
+      sponsorName: sponsors.name,
+    })
+    .from(gamePlayers)
+    .innerJoin(participants, eq(gamePlayers.playerId, participants.id))
+    .leftJoin(gamePlayerSponsors, and(
+      eq(gamePlayerSponsors.gameId, gameId),
+      eq(gamePlayerSponsors.playerId, gamePlayers.playerId)
+    ))
+    .leftJoin(sponsors, eq(gamePlayerSponsors.sponsorId, sponsors.id))
+    .where(eq(gamePlayers.gameId, gameId));
+
+  // Fetch prizes with beneficiaries
+  const prizesData = await db
+    .select({
+      prizeId: gamePrizes.id,
+      prize: gamePrizes.prize,
+      beneficiaryId: playerPrizeBeneficiaries.playerId,
+      beneficiaryFirstName: participants.firstName,
+      beneficiaryLastName: participants.lastName,
+      pickOrder: playerPrizeBeneficiaries.pickOrder,
+    })
+    .from(gamePrizes)
+    .leftJoin(playerPrizeBeneficiaries, eq(playerPrizeBeneficiaries.gamePrizeId, gamePrizes.id))
+    .leftJoin(participants, eq(playerPrizeBeneficiaries.playerId, participants.id))
+    .where(eq(gamePrizes.gameId, gameId))
+    .orderBy(gamePrizes.id, asc(playerPrizeBeneficiaries.pickOrder));
+
+  // Fetch items with clues and guesses - FIXED to properly associate guesses with clues
+  const itemsData = await db
+    .select({
+      itemId: gameItems.id,
+      itemNumber: gameItems.itemNumber,
+      itemType: gameItemTypes.type,
+      itemAnswer: gameItems.itemAnswer,
+      clueId: gameItemClues.id,
+      clueNumber: gameItemClues.clueNumber,
+      clueText: gameItemClues.clue,
+      clueCompleted: gameItemClues.isCompleted,
+      guessId: gameItemGuesses.id,
+      guessPlayerId: gameItemGuesses.playerId,
+      guessPlayerFirstName: participants.firstName,
+      guessPlayerLastName: participants.lastName,
+      guessText: gameItemGuesses.guess,
+      isCorrect: gameItemGuesses.isCorrect,
+      guessClueNumber: gameItemClues.clueNumber,
+    })
+    .from(gameItems)
+    .innerJoin(gameItemTypes, eq(gameItems.gameItemTypeId, gameItemTypes.id))
+    .leftJoin(gameItemClues, eq(gameItemClues.gameItemId, gameItems.id))
+    .leftJoin(gameItemGuesses, eq(gameItemGuesses.gameItemId, gameItems.id))
+    .leftJoin(participants, eq(gameItemGuesses.playerId, participants.id));
+
+  // Build where clause and order by using raw SQL to avoid null column issues
+  const filteredItemsData = itemsData.filter(i => i.itemId > 0);
+  filteredItemsData.sort((a, b) => {
+    if (a.itemNumber !== b.itemNumber) return a.itemNumber - b.itemNumber;
+    if ((a.clueNumber ?? 0) !== (b.clueNumber ?? 0)) return (a.clueNumber ?? 0) - (b.clueNumber ?? 0);
+    return 0;
+  });
+
+  // Fetch jackpot
+  const jackpotData = await db
+    .select({
+      oneCorrect: jackpots.oneCorrect,
+      bothCorrect: jackpots.bothCorrect,
+      callerName: jackpots.callerName,
+      callerGuessInitials: initialCombinations.combination,
+    })
+    .from(jackpots)
+    .leftJoin(initialCombinations, eq(jackpots.callerGuessInitialsCombinationId, initialCombinations.id))
+    .where(eq(jackpots.gameId, gameId))
+    .limit(1);
+
+  // Fetch game sponsors
+  const gameSponsorsData = await db
+    .select({
+      sponsorName: sponsors.name,
+    })
+    .from(gameSponsors)
+    .innerJoin(sponsors, eq(gameSponsors.sponsorId, sponsors.id))
+    .where(eq(gameSponsors.gameId, gameId));
+
+  // Transform data - FIXED to deduplicate
+  const players = new Map<number, { firstName: string; lastName: string; nickname: string | null; sponsors: string[] }>();
+  gamePlayersData.forEach(p => {
+    if (!players.has(p.playerId)) {
+      players.set(p.playerId, { firstName: p.firstName, lastName: p.lastName, nickname: p.nickname, sponsors: [] });
+    }
+    if (p.sponsorId && p.sponsorName) {
+      const existing = players.get(p.playerId)!;
+      if (!existing.sponsors.includes(p.sponsorName)) {
+        existing.sponsors.push(p.sponsorName);
+      }
+    }
+  });
+
+  const prizes = new Map<number, { prize: string; beneficiaries: { name: string; pickOrder: number | null }[] }>();
+  prizesData.forEach(p => {
+    if (!prizes.has(p.prizeId)) {
+      prizes.set(p.prizeId, { prize: p.prize, beneficiaries: [] });
+    }
+    if (p.beneficiaryId && p.beneficiaryFirstName && p.beneficiaryLastName) {
+      prizes.get(p.prizeId)!.beneficiaries.push({
+        name: `${p.beneficiaryFirstName} ${p.beneficiaryLastName}`,
+        pickOrder: p.pickOrder,
+      });
+    }
+  });
+
+  const items = new Map<number, { itemNumber: number; itemType: string; answer: string; clues: { id: number; number: number | null; text: string | null; completed: boolean | null }[]; guesses: { playerId: number; playerName: string; guess: string | null; isCorrect: boolean | null; clueNumber: number | null }[] }>();
+  filteredItemsData.forEach(i => {
+    if (!items.has(i.itemId)) {
+      items.set(i.itemId, { itemNumber: i.itemNumber, itemType: i.itemType, answer: i.itemAnswer, clues: [], guesses: [] });
+    }
+    // FIXED: Check for duplicate before pushing
+    if (i.clueId && !items.get(i.itemId)!.clues.some(c => c.id === i.clueId)) {
+      items.get(i.itemId)!.clues.push({ id: i.clueId, number: i.clueNumber, text: i.clueText, completed: i.clueCompleted });
+    }
+    // FIXED: Check for duplicate guesses before pushing
+    if (i.guessId && i.guessPlayerId && !items.get(i.itemId)!.guesses.some(g => g.playerId === i.guessPlayerId && g.clueNumber === i.guessClueNumber)) {
+      items.get(i.itemId)!.guesses.push({
+        playerId: i.guessPlayerId,
+        playerName: `${i.guessPlayerFirstName || ''} ${i.guessPlayerLastName || ''}`,
+        guess: i.guessText,
+        isCorrect: i.isCorrect,
+        clueNumber: i.guessClueNumber,
+      });
+    }
+  });
+
+  return {
+    ...game[0],
+    players: Array.from(players.values()),
+    prizes: Array.from(prizes.values()),
+    items: Array.from(items.values()).sort((a, b) => a.itemNumber - b.itemNumber),
+    jackpot: jackpotData[0] || null,
+    gameSponsors: gameSponsorsData.map(s => s.sponsorName),
+  };
 }
