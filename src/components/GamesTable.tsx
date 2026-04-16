@@ -70,7 +70,14 @@ export function GamesTable({ games, page, totalPages }: GamesTableProps) {
           ) : (
             games.map((game) => (
               <TableRow key={game.id}>
-                <TableCell>{game.gameNumber}</TableCell>
+                <TableCell>
+                  <Link
+                    href={`/games/${game.id}`}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {game.gameNumber}
+                  </Link>
+                </TableCell>
                 <TableCell>{formatGameDateUTC(game.gameDate)}</TableCell>
                 <TableCell>{game.initialsCombination}</TableCell>
                 <TableCell>
