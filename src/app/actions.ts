@@ -399,7 +399,7 @@ export async function addGame(data: AddGameInput) {
     const parsed = addGameSchema.parse(data);
     const database = assertDb();
 
-    await database.transaction(async (tx) => {
+    const transactionGameId = await database.transaction(async (tx) => {
       const uniqueGameTypeIds = uniqueNumbers(parsed.gameTypeIds);
       const uniquePlayerIds = uniqueNumbers(parsed.playerIds);
       const initialsCombinationId = await findOrCreateInitialCombinationId(
@@ -592,9 +592,13 @@ export async function addGame(data: AddGameInput) {
           );
         }
       }
+
+      return gameId;
     });
 
     revalidatePath('/admin/games');
+    revalidatePath('/games');
+    revalidatePath(`/games/${transactionGameId}`);
     return { success: true };
   } catch (error) {
     console.error('Error adding game:', error);
