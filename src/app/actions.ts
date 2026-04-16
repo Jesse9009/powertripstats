@@ -17,6 +17,7 @@ import {
   games,
   initialCombinations,
   jackpots,
+  locations,
   participants,
   playerPrizeBeneficiaries,
   sponsors,
@@ -36,6 +37,7 @@ const addGameSchema = z
     playerIds: z.array(idSchema).min(1),
     initialsCombination: z.string().trim().min(1),
     notes: z.string().trim().optional(),
+    locationId: idSchema,
     gameTypeIds: z.array(idSchema).min(1),
     includePrize: z.boolean(),
     prizes: z.array(
@@ -325,6 +327,7 @@ export async function getGameFormOptions() {
       gameTypes: [],
       gameItemTypes: [],
       sponsors: [],
+      locations: [],
     };
   }
 
@@ -333,6 +336,7 @@ export async function getGameFormOptions() {
     gameTypesResult,
     gameItemTypesResult,
     sponsorsResult,
+    locationsResult,
   ] = await Promise.all([
     db
       .select({
@@ -355,6 +359,10 @@ export async function getGameFormOptions() {
       .select({ id: sponsors.id, name: sponsors.name })
       .from(sponsors)
       .orderBy(asc(sponsors.name)),
+    db
+      .select({ id: locations.id, name: locations.name })
+      .from(locations)
+      .orderBy(asc(locations.id)),
   ]);
 
   return {
@@ -362,6 +370,7 @@ export async function getGameFormOptions() {
     gameTypes: gameTypesResult,
     gameItemTypes: gameItemTypesResult,
     sponsors: sponsorsResult,
+    locations: locationsResult,
   };
 }
 
@@ -406,6 +415,7 @@ export async function addGame(data: AddGameInput) {
           hostParticipantId: parsed.hostParticipantId,
           initialCombinationId: initialsCombinationId,
           notes: parsed.notes?.trim() || null,
+          locationId: parsed.locationId,
         })
         .returning({ id: games.id });
 
