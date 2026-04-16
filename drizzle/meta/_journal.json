@@ -29,6 +29,13 @@
       "when": 1776163200000,
       "tag": "0003_flaky_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776364919226,
+      "tag": "0004_right_firestar",
+      "breakpoints": true
     }
   ]
 }

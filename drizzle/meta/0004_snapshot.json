@@ -1,0 +1,1011 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "914603ce-5d54-4f7b-94a3-002ea589dd7d",
+  "prevId": "204f6f7f-2fec-4c17-8178-9f8a6108c25e",
+  "tables": {
+    "game_game_types": {
+      "name": "game_game_types",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "game_type_id": {
+          "name": "game_type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_game_types_game_id_games_id_fk": {
+          "name": "game_game_types_game_id_games_id_fk",
+          "tableFrom": "game_game_types",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_game_types_game_type_id_game_types_id_fk": {
+          "name": "game_game_types_game_type_id_game_types_id_fk",
+          "tableFrom": "game_game_types",
+          "tableTo": "game_types",
+          "columnsFrom": [
+            "game_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_game_types_game_id_game_type_id_pk": {
+          "columns": [
+            "game_id",
+            "game_type_id"
+          ],
+          "name": "game_game_types_game_id_game_type_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_item_clues": {
+      "name": "game_item_clues",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_item_id": {
+          "name": "game_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clue_number": {
+          "name": "clue_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clue": {
+          "name": "clue",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_completed": {
+          "name": "is_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "game_item_clues_game_item_id_clue_number_unique": {
+          "name": "game_item_clues_game_item_id_clue_number_unique",
+          "columns": [
+            "game_item_id",
+            "clue_number"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "game_item_clues_game_item_id_game_items_id_fk": {
+          "name": "game_item_clues_game_item_id_game_items_id_fk",
+          "tableFrom": "game_item_clues",
+          "tableTo": "game_items",
+          "columnsFrom": [
+            "game_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_item_guesses": {
+      "name": "game_item_guesses",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_item_id": {
+          "name": "game_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "game_item_clue_id": {
+          "name": "game_item_clue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "guess": {
+          "name": "guess",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_correct": {
+          "name": "is_correct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "game_item_guesses_game_item_id_player_id_unique": {
+          "name": "game_item_guesses_game_item_id_player_id_unique",
+          "columns": [
+            "game_item_id",
+            "player_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "game_item_guesses_game_item_id_game_items_id_fk": {
+          "name": "game_item_guesses_game_item_id_game_items_id_fk",
+          "tableFrom": "game_item_guesses",
+          "tableTo": "game_items",
+          "columnsFrom": [
+            "game_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_item_guesses_game_item_clue_id_game_item_clues_id_fk": {
+          "name": "game_item_guesses_game_item_clue_id_game_item_clues_id_fk",
+          "tableFrom": "game_item_guesses",
+          "tableTo": "game_item_clues",
+          "columnsFrom": [
+            "game_item_clue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_item_guesses_player_id_participants_id_fk": {
+          "name": "game_item_guesses_player_id_participants_id_fk",
+          "tableFrom": "game_item_guesses",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_item_types": {
+      "name": "game_item_types",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "game_item_types_type_unique": {
+          "name": "game_item_types_type_unique",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_items": {
+      "name": "game_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_number": {
+          "name": "item_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "game_item_type_id": {
+          "name": "game_item_type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_answer": {
+          "name": "item_answer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "game_items_game_id_item_number_unique": {
+          "name": "game_items_game_id_item_number_unique",
+          "columns": [
+            "game_id",
+            "item_number"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "game_items_game_id_games_id_fk": {
+          "name": "game_items_game_id_games_id_fk",
+          "tableFrom": "game_items",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_items_game_item_type_id_game_item_types_id_fk": {
+          "name": "game_items_game_item_type_id_game_item_types_id_fk",
+          "tableFrom": "game_items",
+          "tableTo": "game_item_types",
+          "columnsFrom": [
+            "game_item_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_player_sponsors": {
+      "name": "game_player_sponsors",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sponsor_id": {
+          "name": "sponsor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_player_sponsors_game_id_games_id_fk": {
+          "name": "game_player_sponsors_game_id_games_id_fk",
+          "tableFrom": "game_player_sponsors",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_player_sponsors_sponsor_id_sponsors_id_fk": {
+          "name": "game_player_sponsors_sponsor_id_sponsors_id_fk",
+          "tableFrom": "game_player_sponsors",
+          "tableTo": "sponsors",
+          "columnsFrom": [
+            "sponsor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_player_sponsors_player_id_participants_id_fk": {
+          "name": "game_player_sponsors_player_id_participants_id_fk",
+          "tableFrom": "game_player_sponsors",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_player_sponsors_game_id_sponsor_id_player_id_pk": {
+          "columns": [
+            "game_id",
+            "sponsor_id",
+            "player_id"
+          ],
+          "name": "game_player_sponsors_game_id_sponsor_id_player_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_players": {
+      "name": "game_players",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_players_game_id_games_id_fk": {
+          "name": "game_players_game_id_games_id_fk",
+          "tableFrom": "game_players",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_players_player_id_participants_id_fk": {
+          "name": "game_players_player_id_participants_id_fk",
+          "tableFrom": "game_players",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_players_game_id_player_id_pk": {
+          "columns": [
+            "game_id",
+            "player_id"
+          ],
+          "name": "game_players_game_id_player_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_prizes": {
+      "name": "game_prizes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "prize": {
+          "name": "prize",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_prizes_game_id_games_id_fk": {
+          "name": "game_prizes_game_id_games_id_fk",
+          "tableFrom": "game_prizes",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_sponsors": {
+      "name": "game_sponsors",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sponsor_id": {
+          "name": "sponsor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_sponsors_game_id_games_id_fk": {
+          "name": "game_sponsors_game_id_games_id_fk",
+          "tableFrom": "game_sponsors",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_sponsors_sponsor_id_sponsors_id_fk": {
+          "name": "game_sponsors_sponsor_id_sponsors_id_fk",
+          "tableFrom": "game_sponsors",
+          "tableTo": "sponsors",
+          "columnsFrom": [
+            "sponsor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_sponsors_game_id_sponsor_id_pk": {
+          "columns": [
+            "game_id",
+            "sponsor_id"
+          ],
+          "name": "game_sponsors_game_id_sponsor_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_types": {
+      "name": "game_types",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "game_types_type_unique": {
+          "name": "game_types_type_unique",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "games": {
+      "name": "games",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_number": {
+          "name": "game_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "game_date": {
+          "name": "game_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "host_participant_id": {
+          "name": "host_participant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "initial_combination_id": {
+          "name": "initial_combination_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "location_id": {
+          "name": "location_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "games_host_participant_id_participants_id_fk": {
+          "name": "games_host_participant_id_participants_id_fk",
+          "tableFrom": "games",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "host_participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "games_initial_combination_id_initial_combinations_id_fk": {
+          "name": "games_initial_combination_id_initial_combinations_id_fk",
+          "tableFrom": "games",
+          "tableTo": "initial_combinations",
+          "columnsFrom": [
+            "initial_combination_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "games_location_id_locations_id_fk": {
+          "name": "games_location_id_locations_id_fk",
+          "tableFrom": "games",
+          "tableTo": "locations",
+          "columnsFrom": [
+            "location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "initial_combinations": {
+      "name": "initial_combinations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "combination": {
+          "name": "combination",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "initial_combinations_combination_unique": {
+          "name": "initial_combinations_combination_unique",
+          "columns": [
+            "combination"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "jackpots": {
+      "name": "jackpots",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "one_correct": {
+          "name": "one_correct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "both_correct": {
+          "name": "both_correct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "caller_name": {
+          "name": "caller_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "caller_guess_initials_combination_id": {
+          "name": "caller_guess_initials_combination_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "jackpots_game_id_games_id_fk": {
+          "name": "jackpots_game_id_games_id_fk",
+          "tableFrom": "jackpots",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "jackpots_caller_guess_initials_combination_id_initial_combinations_id_fk": {
+          "name": "jackpots_caller_guess_initials_combination_id_initial_combinations_id_fk",
+          "tableFrom": "jackpots",
+          "tableTo": "initial_combinations",
+          "columnsFrom": [
+            "caller_guess_initials_combination_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "locations": {
+      "name": "locations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "participants": {
+      "name": "participants",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "player_prize_beneficiaries": {
+      "name": "player_prize_beneficiaries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game_prize_id": {
+          "name": "game_prize_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pick_order": {
+          "name": "pick_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "beneficiary_name": {
+          "name": "beneficiary_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "player_prize_beneficiaries_game_prize_id_game_prizes_id_fk": {
+          "name": "player_prize_beneficiaries_game_prize_id_game_prizes_id_fk",
+          "tableFrom": "player_prize_beneficiaries",
+          "tableTo": "game_prizes",
+          "columnsFrom": [
+            "game_prize_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "player_prize_beneficiaries_player_id_participants_id_fk": {
+          "name": "player_prize_beneficiaries_player_id_participants_id_fk",
+          "tableFrom": "player_prize_beneficiaries",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "sponsors": {
+      "name": "sponsors",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
