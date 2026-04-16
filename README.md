@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PowerTripStats Starter
 
-## Getting Started
+This project is scaffolded with:
 
-First, run the development server:
+- Next.js (App Router + TypeScript)
+- Tailwind CSS
+- shadcn/ui
+- Drizzle ORM
+- libSQL database client (`@libsql/client`) for Turso
+
+## 1) Configure Turso
+
+Copy env vars and fill in your Turso values:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Required values:
+
+- `TURSO_DATABASE_URL` (for example `libsql://my-db-org.turso.io`)
+- `TURSO_AUTH_TOKEN`
+
+## 2) Generate and run migrations
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+## 3) Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Optional starter seed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Seed starter users:
 
-## Learn More
+```bash
+curl -X POST http://localhost:3000/api/seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+Then inspect data:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `GET /api/users`
+- The home page table at `/`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Useful scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run db:generate` - Generate SQL migrations from schema changes
+- `npm run db:migrate` - Apply migrations to Turso
+- `npm run db:studio` - Open Drizzle Studio

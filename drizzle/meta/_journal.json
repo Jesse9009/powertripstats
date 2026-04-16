@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1744214400000,
+      "tag": "0000_fancy_princess_powerful",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775836737930,
+      "tag": "0001_premium_gressill",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775854276837,
+      "tag": "0002_sad_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776163200000,
+      "tag": "0003_flaky_madrox",
+      "breakpoints": true
+    }
+  ]
+}
