@@ -741,12 +741,12 @@ export async function getGameById(gameId: number) {
     }
   });
 
-  const prizes = new Map<number, { prize: string; beneficiaries: { name: string; pickOrder: number | null }[] }>();
+  const prizes = new Map<number, { prize: string; beneficiaries: { name: string; pickOrder: number }[] }>();
   prizesData.forEach(p => {
     if (!prizes.has(p.prizeId)) {
       prizes.set(p.prizeId, { prize: p.prize, beneficiaries: [] });
     }
-    if (p.beneficiaryId && p.beneficiaryFirstName && p.beneficiaryLastName) {
+    if (p.beneficiaryId && p.beneficiaryFirstName && p.beneficiaryLastName && p.pickOrder !== null) {
       prizes.get(p.prizeId)!.beneficiaries.push({
         name: `${p.beneficiaryFirstName} ${p.beneficiaryLastName}`,
         pickOrder: p.pickOrder,
@@ -754,17 +754,17 @@ export async function getGameById(gameId: number) {
     }
   });
 
-  const items = new Map<number, { itemNumber: number; itemType: string; answer: string; clues: { id: number; number: number | null; text: string | null; completed: boolean | null }[]; guesses: { playerId: number; playerName: string; guess: string | null; isCorrect: boolean | null; clueNumber: number | null }[] }>();
+  const items = new Map<number, { itemNumber: number; itemType: string; answer: string; clues: { id: number; number: number; text: string; completed: boolean }[]; guesses: { playerId: number; playerName: string; guess: string | null; isCorrect: boolean; clueNumber: number }[] }>();
   filteredItemsData.forEach(i => {
     if (!items.has(i.itemId)) {
       items.set(i.itemId, { itemNumber: i.itemNumber, itemType: i.itemType, answer: i.itemAnswer, clues: [], guesses: [] });
     }
-    // FIXED: Check for duplicate before pushing
-    if (i.clueId && !items.get(i.itemId)!.clues.some(c => c.id === i.clueId)) {
+    // FIXED: Check for duplicate before pushing and ensure clue has required non-null fields
+    if (i.clueId && i.clueNumber !== null && i.clueText !== null && i.clueCompleted !== null && !items.get(i.itemId)!.clues.some(c => c.id === i.clueId)) {
       items.get(i.itemId)!.clues.push({ id: i.clueId, number: i.clueNumber, text: i.clueText, completed: i.clueCompleted });
     }
-    // FIXED: Check for duplicate guesses before pushing
-    if (i.guessId && i.guessPlayerId && !items.get(i.itemId)!.guesses.some(g => g.playerId === i.guessPlayerId && g.clueNumber === i.guessClueNumber)) {
+    // FIXED: Check for duplicate guesses before pushing and ensure guess has required non-null fields
+    if (i.guessId && i.guessPlayerId && i.guessClueNumber !== null && i.isCorrect !== null && !items.get(i.itemId)!.guesses.some(g => g.playerId === i.guessPlayerId && g.clueNumber === i.guessClueNumber)) {
       items.get(i.itemId)!.guesses.push({
         playerId: i.guessPlayerId,
         playerName: `${i.guessPlayerFirstName || ''} ${i.guessPlayerLastName || ''}`,
