@@ -48,6 +48,7 @@ function createSchema(gameTypes: GameTypeOption[]) {
         .max(2, 'Initials combination must be 2 characters')
         .min(2, 'Initials combination is required'),
       notes: z.string().trim().optional(),
+      locationId: z.number().int().min(1, 'Location is required'),
       gameTypeIds: z
         .array(z.number().int().positive())
         .min(1, 'Pick at least one game type'),
@@ -253,11 +254,17 @@ type SponsorOption = {
   name: string;
 };
 
+type LocationOption = {
+  id: number;
+  name: string;
+};
+
 interface AddGameFormProps {
   participants: ParticipantOption[];
   gameTypes: GameTypeOption[];
   gameItemTypes: GameItemTypeOption[];
   sponsors: SponsorOption[];
+  locations: LocationOption[];
 }
 
 function createDefaultValues(): GameFormData {
@@ -268,6 +275,7 @@ function createDefaultValues(): GameFormData {
     playerIds: [],
     initialsCombination: '',
     notes: '',
+    locationId: 0,
     gameTypeIds: [],
     includePrize: false,
     prizes: [],
@@ -890,6 +898,7 @@ export function AddGameForm({
   gameTypes,
   gameItemTypes,
   sponsors,
+  locations,
 }: AddGameFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -1174,6 +1183,29 @@ export function AddGameForm({
                 {errors.initialsCombination && (
                   <p className="text-xs text-destructive">
                     {errors.initialsCombination.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="locationId" className="text-sm font-medium">
+                  Location
+                </label>
+                <select
+                  id="locationId"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  {...register('locationId', { valueAsNumber: true })}
+                >
+                  <option value={0}>Select location</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.locationId && (
+                  <p className="text-xs text-destructive">
+                    {errors.locationId.message}
                   </p>
                 )}
               </div>
