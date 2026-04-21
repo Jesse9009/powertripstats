@@ -67,7 +67,7 @@ A single card with 5 rows. Rows with no data are not rendered.
 ### Item Card — Initial State (Spoilers Off)
 
 - **Item number** badge (e.g., "#1")
-- **"Tiebreaker"** badge shown only for tiebreaker items (items 13 and 14); item type is NOT shown for regular items
+- **"Tiebreaker"** badge shown only when the item's `itemType` indicates a tiebreaker; item type is NOT shown for regular items
 - A **"Next Clue"** button
 - Nothing else visible — no answer, no clues, no guesses
 
@@ -87,7 +87,7 @@ A single card with 5 rows. Rows with no data are not rendered.
 - Answer shown
 - All guesses shown
 - Cards are fully expanded by default
-- "Expand All" / "Collapse All" toggle at section top controls all cards at once
+- "Expand All" / "Collapse All" toggle at section top controls all cards at once. "Collapse All" returns cards to showing only the item number badge (and tiebreaker badge if applicable), same as the spoilers-off initial state but with content still accessible via clicks.
 
 ### Card Height Management
 
@@ -95,6 +95,7 @@ A single card with 5 rows. Rows with no data are not rendered.
 
 ### Tiebreaker Items
 
+- Identified by `itemType` field from the data (not by item number)
 - Visually distinguished with a "Tiebreaker" badge
 - Maximum of 3 clues (vs. 6 for regular items)
 
