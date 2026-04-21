@@ -58,7 +58,6 @@ export function GameHeader({
   return (
     <Card className="bg-gradient-to-br from-card to-card/50 border-primary/20">
       <CardHeader className="pb-2">
-        {/* Row 1: Title */}
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold tracking-tight">
             Game #{gameNumber}
@@ -69,7 +68,6 @@ export function GameHeader({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Row 2: Game Metadata */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
           <div>
             <span className="text-muted-foreground">Host: </span>
@@ -104,11 +102,10 @@ export function GameHeader({
           )}
         </div>
 
-        {/* Row 3: Players */}
         {players.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {players.map((player, index) => (
-              <div key={index} className="flex flex-col items-center">
+              <div key={`${player.firstName}-${player.lastName}`} className="flex flex-col items-center">
                 <Badge variant="secondary" className="text-sm px-3 py-1">
                   {player.firstName} {player.lastName}
                   {player.nickname && (
@@ -127,7 +124,6 @@ export function GameHeader({
           </div>
         )}
 
-        {/* Row 4: Jackpot */}
         {jackpot && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
             <div>
@@ -161,10 +157,8 @@ export function GameHeader({
           </div>
         )}
 
-        {/* Row 5: Prizes (collapsed) */}
         {prizes.length > 0 && <PrizesDisclosure prizes={prizes} />}
 
-        {/* Row 6: Notes */}
         {notes && (
           <div className="rounded-lg bg-muted/50 p-3 border-l-4 border-primary">
             <p className="text-sm text-muted-foreground italic">{notes}</p>
@@ -183,12 +177,13 @@ function PrizesDisclosure({ prizes }: { prizes: Prize[] }) {
       </summary>
       <div className="mt-2 space-y-2 pl-4">
         {prizes.map((prize, index) => (
-          <div key={index}>
+          <div key={`${prize.prize}-${index}`}>
             <span className="font-medium">{prize.prize}</span>
             {prize.beneficiaries.length > 0 && (
               <span className="text-muted-foreground">
                 {' '}&mdash;{' '}
                 {prize.beneficiaries
+                  .slice()
                   .sort((a, b) => a.pickOrder - b.pickOrder)
                   .map((b) => `${b.pickOrder}. ${b.name}`)
                   .join(', ')}
