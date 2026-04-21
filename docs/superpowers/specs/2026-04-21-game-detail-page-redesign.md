@@ -24,7 +24,7 @@ The page has two zones:
 
 ## Header Zone
 
-A single card with 5 rows. Rows with no data are not rendered.
+A single card with up to 6 rows. Rows with no data are not rendered.
 
 ### Row 1: Title
 - Game number (large, bold) left-aligned
@@ -49,6 +49,10 @@ A single card with 5 rows. Rows with no data are not rendered.
 - De-emphasized — collapsed behind a disclosure/expandable link (e.g., "View Prizes")
 - Shows prize names with beneficiaries and pick order when expanded
 - **Not rendered if no prize data exists**
+
+### Row 6: Notes
+- Game notes displayed in an italic callout style (similar to current OverviewSection)
+- **Not rendered if no notes exist**
 
 ---
 
@@ -95,7 +99,7 @@ A single card with 5 rows. Rows with no data are not rendered.
 
 ### Tiebreaker Items
 
-- Identified by `itemType` field from the data (not by item number)
+- Identified by `itemType === "tiebreaker"` (exact lowercase string match)
 - Visually distinguished with a "Tiebreaker" badge
 - Maximum of 3 clues (vs. 6 for regular items)
 
