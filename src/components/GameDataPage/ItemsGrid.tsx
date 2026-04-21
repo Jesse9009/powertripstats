@@ -33,11 +33,17 @@ export function ItemsGrid({ items }: ItemsGridProps) {
   );
   const [allExpanded, setAllExpanded] = useState(showSpoilers);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    setRevealState(makeDefaultState(showSpoilers));
+    const map = new Map<number, ItemRevealState>();
+    items.forEach((item) => {
+      map.set(item.itemNumber, {
+        revealedClueCount: showSpoilers ? item.clues.length : 0,
+        answerRevealed: showSpoilers,
+      });
+    });
+    setRevealState(map);
     setAllExpanded(showSpoilers);
-  }, [showSpoilers]);
+  }, [showSpoilers, items]);
 
   const revealNextClue = (itemNumber: number) => {
     setRevealState((prev) => {
