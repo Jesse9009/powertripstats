@@ -71,7 +71,7 @@ export function SpoilerItemCard({ item, players }: SpoilerItemCardProps) {
                     color: 'hsl(var(--nobody))',
                   }}
                 >
-                  No Answer
+                  Nobody got it ("YOU BLEW IT!")
                 </Badge>
               )}
             </div>
@@ -80,9 +80,6 @@ export function SpoilerItemCard({ item, players }: SpoilerItemCardProps) {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
-            {winnerPlayer && state.winnerGuess && (
-              <WinnerPill name={shortName(winnerPlayer)} />
-            )}
             {state.eliminatedPlayerNames
               .filter((n) => n !== state.winnerGuess?.playerName)
               .map((name) => {
@@ -94,6 +91,9 @@ export function SpoilerItemCard({ item, players }: SpoilerItemCardProps) {
                   />
                 );
               })}
+            {winnerPlayer && state.winnerGuess && (
+              <WinnerPill name={shortName(winnerPlayer)} />
+            )}
             <ChevronDown
               className={cn(
                 'h-4 w-4 text-muted-foreground transition-transform',
@@ -107,10 +107,19 @@ export function SpoilerItemCard({ item, players }: SpoilerItemCardProps) {
       {expanded && (
         <div className="border-t px-4 py-3 space-y-3 bg-muted/30">
           {item.clues.map((clue) => {
-            const guesses = state.guessesByClue.get(clue.number) ?? [];
-            const isWinClue = state.winClueNumber === clue.number;
+            // sort guesses so that incorrect guesses are always shown to the left of the correct guesses
+            const guesses =
+              state.guessesByClue.get(clue.number)?.sort((a, b) => {
+                if (a.isCorrect && !b.isCorrect) return 1;
+                if (!a.isCorrect && b.isCorrect) return -1;
+                return 0;
+              }) ?? [];
+            const isWinClue =
+              state.finalReadClueNumber === clue.number &&
+              state.winnerGuess !== null;
             const isPastWin =
-              state.winClueNumber !== null && clue.number > state.winClueNumber;
+              state.finalReadClueNumber !== null &&
+              clue.number > state.finalReadClueNumber;
 
             return (
               <div
@@ -162,25 +171,33 @@ function CluePipStrip({
     <div className="w-100 max-w-full">
       <div className="flex gap-1">
         {pips.map((n) => {
-          const isWin = state.winClueNumber === n;
+          const hasCorrect =
+            state.finalReadClueNumber === n && state.winnerGuess !== null;
           const hasWrong = (state.guessesByClue.get(n) ?? []).some(
             (g) => !g.isCorrect,
           );
           const isPastWin =
-            state.winClueNumber !== null && n > state.winClueNumber;
-          const hasBoth = isWin && hasWrong;
+            state.finalReadClueNumber !== null && n > state.finalReadClueNumber;
+          const hasBoth = hasCorrect && hasWrong;
 
           return (
             <span
               key={n}
               className={cn(
                 'h-1.5 flex-1 min-w-4 rounded-full',
-                isWin && !hasBoth && 'bg-[color:hsl(var(--win))]',
-                !isWin && hasWrong && 'bg-destructive',
-                !isWin && !hasWrong && !isPastWin && 'bg-muted',
+                hasCorrect && !hasBoth && 'bg-[color:hsl(var(--win))]',
+                !hasCorrect && hasWrong && 'bg-destructive',
+                !hasCorrect && !hasWrong && !isPastWin && 'bg-muted',
                 isPastWin && !hasWrong && 'bg-muted/40',
               )}
-              style={hasBoth ? { background: 'linear-gradient(to right, hsl(var(--destructive)) 50%, hsl(var(--win)) 50%)' } : undefined}
+              style={
+                hasBoth
+                  ? {
+                      background:
+                        'linear-gradient(to right, hsl(var(--destructive)) 50%, hsl(var(--win)) 50%)',
+                    }
+                  : undefined
+              }
             />
           );
         })}
@@ -210,8 +227,8 @@ function WinnerPill({ name }: { name: string }) {
 
 function EliminatedPill({ display }: { display: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground bg-muted">
-      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground bg-destructive/50">
+      <span className="h-1.5 w-1.5 rounded-full bg-destructive/50" />
       {display}
     </span>
   );

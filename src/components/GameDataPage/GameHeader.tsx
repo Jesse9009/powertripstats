@@ -160,13 +160,17 @@ export function GameHeader({
         {jackpot && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
             <div>
-              <span className="text-muted-foreground">Jackpot (1 correct): </span>
+              <span className="text-muted-foreground">
+                Jackpot (1 correct):{' '}
+              </span>
               <span className="font-bold text-primary">
                 ${jackpot.oneCorrect.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Jackpot (both correct): </span>
+              <span className="text-muted-foreground">
+                Jackpot (both correct):{' '}
+              </span>
               <span className="font-bold text-primary">
                 ${jackpot.bothCorrect.toLocaleString()}
               </span>
@@ -178,7 +182,8 @@ export function GameHeader({
                   {jackpot.callerName}
                   {jackpot.callerGuessInitials && (
                     <span className="text-muted-foreground">
-                      {' '}&mdash; guessed{' '}
+                      {' '}
+                      &mdash; guessed{' '}
                       <span className="font-mono font-bold">
                         {jackpot.callerGuessInitials}
                       </span>
@@ -265,7 +270,8 @@ function PrizesDisclosure({ prizes }: { prizes: Prize[] }) {
             <span className="font-medium">{prize.prize}</span>
             {prize.beneficiaries.length > 0 && (
               <span className="text-muted-foreground">
-                {' '}&mdash;{' '}
+                {' '}
+                &mdash;{' '}
                 {prize.beneficiaries
                   .slice()
                   .sort((a, b) => a.pickOrder - b.pickOrder)
