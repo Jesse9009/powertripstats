@@ -85,6 +85,7 @@ const addGameSchema = z
             z.object({
               playerId: idSchema,
               guess: z.string().optional(),
+              clueHeard: z.string().optional(),
               isCorrect: z.boolean(),
               clueNumber: z.number().int().min(1).optional(),
             }),
@@ -586,6 +587,7 @@ export async function addGame(data: AddGameInput) {
                 gameItemClueId,
                 playerId: guess.playerId,
                 guess: guess.isCorrect ? null : guess.guess?.trim() || null,
+                clueHeard: guess.clueHeard?.trim() || null,
                 isCorrect: guess.isCorrect,
               };
             }),
@@ -614,6 +616,16 @@ export async function addGame(data: AddGameInput) {
   }
 }
 
+export async function getGameNumber(gameId: number): Promise<number | null> {
+  if (!db) return null;
+  const result = await db
+    .select({ gameNumber: games.gameNumber })
+    .from(games)
+    .where(eq(games.id, gameId))
+    .limit(1);
+  return result[0]?.gameNumber ?? null;
+}
+
 export async function getGameById(gameId: number) {
   if (!db) return null;
 
@@ -628,10 +640,12 @@ export async function getGameById(gameId: number) {
       hostLastName: participants.lastName,
       hostNickname: participants.nickname,
       initialsCombination: initialCombinations.combination,
+      locationName: locations.name,
     })
     .from(games)
     .innerJoin(participants, eq(games.hostParticipantId, participants.id))
     .innerJoin(initialCombinations, eq(games.initialCombinationId, initialCombinations.id))
+    .leftJoin(locations, eq(games.locationId, locations.id))
     .where(eq(games.id, gameId))
     .limit(1);
 
@@ -694,8 +708,9 @@ export async function getGameById(gameId: number) {
     .from(gameItems)
     .innerJoin(gameItemTypes, eq(gameItems.gameItemTypeId, gameItemTypes.id))
     .leftJoin(gameItemClues, eq(gameItemClues.gameItemId, gameItems.id))
-    .leftJoin(gameItemGuesses, eq(gameItemGuesses.gameItemId, gameItems.id))
-    .leftJoin(participants, eq(gameItemGuesses.playerId, participants.id));
+    .leftJoin(gameItemGuesses, eq(gameItemGuesses.gameItemClueId, gameItemClues.id))
+    .leftJoin(participants, eq(gameItemGuesses.playerId, participants.id))
+    .where(eq(gameItems.gameId, gameId));
 
   // Build where clause and order by using raw SQL to avoid null column issues
   const filteredItemsData = itemsData.filter(i => i.itemId > 0);

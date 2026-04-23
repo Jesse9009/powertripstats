@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getGameById } from '@/app/actions';
 import { GameHeader } from '@/components/GameDataPage/GameHeader';
 import { ItemsGrid } from '@/components/GameDataPage/ItemsGrid';
+import { FinalStandings } from '@/components/GameDataPage/FinalStandings';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -22,7 +23,7 @@ export default async function GamePage({ params }: PageProps) {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-6 md:p-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 p-6 md:p-10">
       <GameHeader
         gameNumber={game.gameNumber}
         gameDate={game.gameDate}
@@ -36,9 +37,14 @@ export default async function GamePage({ params }: PageProps) {
         jackpot={game.jackpot}
         prizes={game.prizes}
         notes={game.notes}
+        items={game.items}
       />
 
-      {game.items.length > 0 && <ItemsGrid items={game.items} />}
+      <FinalStandings items={game.items} players={game.players} />
+
+      {game.items.length > 0 && (
+        <ItemsGrid items={game.items} players={game.players} />
+      )}
     </main>
   );
 }

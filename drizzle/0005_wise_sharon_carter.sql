@@ -1,0 +1,1 @@
+ALTER TABLE `game_item_guesses` ADD `clue_heard` text;

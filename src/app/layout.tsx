@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Syne, Figtree } from 'next/font/google';
+import { Syne, Figtree, Bebas_Neue } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
 import { AdminDropdown } from '@/components/AdminDropdown';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { SpoilersToggle } from '@/components/SpoilersToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Toaster } from '@/components/ui/sonner';
@@ -21,6 +22,12 @@ const figtree = Figtree({
   weight: ['300', '400', '500', '600', '700'],
 });
 
+const bebas = Bebas_Neue({
+  variable: '--font-bebas',
+  subsets: ['latin'],
+  weight: '400',
+});
+
 export const metadata: Metadata = {
   title: 'PowerTripStats Starter',
   description: 'Next.js + shadcn/ui + Drizzle ORM + Turso libSQL starter',
@@ -34,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${figtree.variable} h-full antialiased`}
+      className={`${syne.variable} ${figtree.variable} ${bebas.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -47,28 +54,31 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SiteSettingsProvider>
           <ThemeProvider>
-            <nav className="w-full bg-background/80 backdrop-blur-md border-b sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-                <Link
-                  href="/"
-                  className="text-xl font-bold text-foreground hover:opacity-80 transition-opacity"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  PowerTripStats
-                </Link>
-                <div className="flex items-center gap-1">
+            <div className="sticky top-0 z-50">
+              <nav className="w-full bg-background/80 backdrop-blur-md border-b">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                   <Link
-                    href="/games"
-                    className="text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded hover:bg-secondary"
+                    href="/"
+                    className="text-xl font-bold text-foreground hover:opacity-80 transition-opacity"
+                    style={{ fontFamily: 'var(--font-syne)' }}
                   >
-                    Games
+                    PowerTripStats
                   </Link>
-                  <AdminDropdown />
-                  <ThemeToggle />
-                  <SpoilersToggle />
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href="/games"
+                      className="text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded hover:bg-secondary"
+                    >
+                      Games
+                    </Link>
+                    <AdminDropdown />
+                    <ThemeToggle />
+                    <SpoilersToggle />
+                  </div>
                 </div>
-              </div>
-            </nav>
+              </nav>
+            </div>
+            <Breadcrumbs />
             {children}
             <Toaster />
           </ThemeProvider>

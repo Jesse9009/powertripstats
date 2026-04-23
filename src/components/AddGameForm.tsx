@@ -101,6 +101,7 @@ function createSchema(gameTypes: GameTypeOption[]) {
                 z.object({
                   playerId: z.number().int().min(0),
                   guess: z.string().optional(),
+                  clueHeard: z.string().optional(),
                   isIncorrect: z.boolean(),
                   clueNumber: z.number().int().min(1).optional(),
                 }),
@@ -294,7 +295,7 @@ function createDefaultValues(): GameFormData {
         gameItemTypeId: 1,
         fallbackAnswer: '',
         clues: [{ clue: '', isNotCompleted: false }],
-        guesses: [{ playerId: 0, guess: '', isIncorrect: false }],
+        guesses: [{ playerId: 0, guess: '', clueHeard: '', isIncorrect: false }],
       },
     ],
   };
@@ -514,7 +515,7 @@ function GameItemFields({
         {guessesArray.fields.map((guessField, guessIndex) => (
           <div
             key={guessField.id}
-            className="grid gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_140px_auto_auto]"
+            className="grid gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_1fr_140px_auto_auto]"
           >
             <div className="space-y-1">
               <label className="text-sm font-medium">Player</label>
@@ -550,6 +551,20 @@ function GameItemFields({
               <Input
                 id={`items.${itemIndex}.guesses.${guessIndex}.guess`}
                 {...register(`items.${itemIndex}.guesses.${guessIndex}.guess`)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label
+                className="text-sm font-medium"
+                htmlFor={`items.${itemIndex}.guesses.${guessIndex}.clueHeard`}
+              >
+                Clue Heard (optional)
+              </label>
+              <Input
+                id={`items.${itemIndex}.guesses.${guessIndex}.clueHeard`}
+                {...register(`items.${itemIndex}.guesses.${guessIndex}.clueHeard`)}
+                placeholder="Leave blank if full clue was heard"
               />
             </div>
 
@@ -631,6 +646,7 @@ function GameItemFields({
               guessesArray.append({
                 playerId: 0,
                 guess: '',
+                clueHeard: '',
                 isIncorrect: false,
               })
             }
@@ -1066,6 +1082,7 @@ export function AddGameForm({
           .map((guess) => ({
             playerId: guess.playerId,
             guess: guess.guess,
+            clueHeard: guess.clueHeard,
             isCorrect: !guess.isIncorrect,
             clueNumber: guess.clueNumber,
           })),
@@ -1515,7 +1532,7 @@ export function AddGameForm({
                     gameItemTypeId: 1,
                     fallbackAnswer: '',
                     clues: [{ clue: '', isNotCompleted: false }],
-                    guesses: [{ playerId: 0, guess: '', isIncorrect: false }],
+                    guesses: [{ playerId: 0, guess: '', clueHeard: '', isIncorrect: false }],
                   })
                 }
               >

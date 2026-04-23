@@ -210,6 +210,7 @@ export const gameItemGuesses = sqliteTable(
       .notNull()
       .references(() => participants.id),
     guess: text("guess"),
+    clueHeard: text("clue_heard"),
     isCorrect: integer("is_correct", { mode: "boolean" }).notNull().default(false),
   },
   (t) => [unique().on(t.gameItemId, t.playerId)]

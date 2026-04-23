@@ -1,119 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { EyeOff } from 'lucide-react';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
-import { ItemCard, type ItemData } from '@/components/GameDataPage/ItemCard';
+import { SpoilerItemCard } from './SpoilerItemCard';
+import { PlayAlongItemCard } from './PlayAlongItemCard';
+import type { ItemData, PlayerLike } from './deriveGameState';
 
 interface ItemsGridProps {
   items: ItemData[];
+  players: PlayerLike[];
 }
 
-interface ItemRevealState {
-  revealedClueCount: number;
-  answerRevealed: boolean;
-}
-
-export function ItemsGrid({ items }: ItemsGridProps) {
+export function ItemsGrid({ items, players }: ItemsGridProps) {
   const { showSpoilers } = useSiteSettings();
 
-  const makeDefaultState = (expanded: boolean): Map<number, ItemRevealState> => {
-    const map = new Map<number, ItemRevealState>();
-    items.forEach((item) => {
-      map.set(item.itemNumber, {
-        revealedClueCount: expanded ? item.clues.length : 0,
-        answerRevealed: expanded,
-      });
-    });
-    return map;
-  };
-
-  const [revealState, setRevealState] = useState<Map<number, ItemRevealState>>(
-    () => makeDefaultState(showSpoilers),
-  );
-  const [allExpanded, setAllExpanded] = useState(showSpoilers);
-
-  useEffect(() => {
-    const map = new Map<number, ItemRevealState>();
-    items.forEach((item) => {
-      map.set(item.itemNumber, {
-        revealedClueCount: showSpoilers ? item.clues.length : 0,
-        answerRevealed: showSpoilers,
-      });
-    });
-    setRevealState(map);
-    setAllExpanded(showSpoilers);
-  }, [showSpoilers, items]);
-
-  const revealNextClue = (itemNumber: number) => {
-    setRevealState((prev) => {
-      const next = new Map(prev);
-      const current = next.get(itemNumber);
-      if (!current) return prev;
-      const item = items.find((i) => i.itemNumber === itemNumber);
-      if (!item) return prev;
-      if (current.revealedClueCount < item.clues.length) {
-        next.set(itemNumber, {
-          ...current,
-          revealedClueCount: current.revealedClueCount + 1,
-        });
-      }
-      return next;
-    });
-  };
-
-  const revealAnswer = (itemNumber: number) => {
-    setRevealState((prev) => {
-      const next = new Map(prev);
-      const current = next.get(itemNumber);
-      if (!current) return prev;
-      const item = items.find((i) => i.itemNumber === itemNumber);
-      if (!item) return prev;
-      next.set(itemNumber, {
-        revealedClueCount: item.clues.length,
-        answerRevealed: true,
-      });
-      return next;
-    });
-  };
-
-  const expandAll = () => {
-    setRevealState(makeDefaultState(true));
-    setAllExpanded(true);
-  };
-
-  const collapseAll = () => {
-    setRevealState(makeDefaultState(false));
-    setAllExpanded(false);
-  };
-
   return (
-    <div className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Game Items</h2>
-        <Button variant="outline" size="sm" onClick={allExpanded ? collapseAll : expandAll}>
-          {allExpanded ? 'Collapse All' : 'Expand All'}
-        </Button>
+        <h2 className="font-display text-2xl tracking-wide">
+          {items.length} Item{items.length === 1 ? '' : 's'}
+        </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => {
-          const state = revealState.get(item.itemNumber) ?? {
-            revealedClueCount: 0,
-            answerRevealed: false,
-          };
-          return (
-            <ItemCard
-              key={item.itemNumber}
+      {!showSpoilers && (
+        <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          <EyeOff className="h-3.5 w-3.5" />
+          Answers and outcomes are hidden. Reveal clues one at a time below, or
+          toggle spoilers in the nav.
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {items.map((item) =>
+          showSpoilers ? (
+            <SpoilerItemCard
+              key={`spoiler-${item.itemNumber}`}
               item={item}
-              revealedClueCount={state.revealedClueCount}
-              answerRevealed={state.answerRevealed}
-              onRevealNextClue={() => revealNextClue(item.itemNumber)}
-              onRevealAnswer={() => revealAnswer(item.itemNumber)}
+              players={players}
             />
-          );
-        })}
+          ) : (
+            <PlayAlongItemCard
+              key={`playalong-${item.itemNumber}`}
+              item={item}
+              players={players}
+            />
+          ),
+        )}
       </div>
-    </div>
+    </section>
   );
 }
