@@ -3,6 +3,7 @@ import { getGameById } from '@/app/actions';
 import { GameHeader } from '@/components/GameDataPage/GameHeader';
 import { ItemsGrid } from '@/components/GameDataPage/ItemsGrid';
 import { FinalStandings } from '@/components/GameDataPage/FinalStandings';
+import { WatchAndListen } from '@/components/GameDataPage/WatchAndListen';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -38,6 +39,12 @@ export default async function GamePage({ params }: PageProps) {
         prizes={game.prizes}
         notes={game.notes}
         items={game.items}
+      />
+
+      <WatchAndListen
+        gameNumber={game.gameNumber}
+        videoUrl={game.videoUrl ?? null}
+        audioUrl={game.audioUrl ?? null}
       />
 
       <FinalStandings items={game.items} players={game.players} />
