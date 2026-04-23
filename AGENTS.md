@@ -6,6 +6,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
+# Project Rules
+
+- This project requires Node.js 22 or higher.
+- Always verify the Node.js version before suggesting commands or changes.
+
 ## Commands
 
 ```bash
@@ -22,6 +27,7 @@ No test framework is configured.
 ## Environment Setup
 
 Copy `.env.local.example` to `.env.local` and fill in:
+
 - `TURSO_DATABASE_URL` — e.g. `libsql://my-db-org.turso.io`
 - `TURSO_AUTH_TOKEN`
 
@@ -36,6 +42,7 @@ The app renders without DB env vars (shows a prompt to configure them), but all 
 All database queries and mutations live in `src/app/actions.ts` as Next.js Server Actions (`'use server'`). There are no separate API routes for data — pages call these actions directly.
 
 `src/db/client.ts` exports two helpers:
+
 - `getDb()` — returns `null` if env vars are missing; used in pages that render gracefully without a DB.
 - `assertDb()` — throws if env vars are missing; used inside `addGame` and other mutations where missing config is a hard error.
 
