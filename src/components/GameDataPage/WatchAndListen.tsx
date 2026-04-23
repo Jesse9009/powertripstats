@@ -25,11 +25,12 @@ export function WatchAndListen({ gameNumber, videoUrl, audioUrl }: Props) {
 
   return (
     <Card>
-      <CardHeader
-        className="cursor-pointer select-none px-4 py-3"
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        <div className="flex items-center justify-between">
+      <CardHeader className="px-4 py-3">
+        <button
+          className="flex w-full cursor-pointer select-none items-center justify-between"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-expanded={open}
+        >
           <h2 className="text-base font-semibold">{title}</h2>
           <ChevronDown
             className={cn(
@@ -37,7 +38,7 @@ export function WatchAndListen({ gameNumber, videoUrl, audioUrl }: Props) {
               open && 'rotate-180',
             )}
           />
-        </div>
+        </button>
       </CardHeader>
 
       {open && (
