@@ -48,8 +48,8 @@ function createSchema(gameTypes: GameTypeOption[]) {
         .max(2, 'Initials combination must be 2 characters')
         .min(2, 'Initials combination is required'),
       notes: z.string().trim().optional(),
-      videoUrl: z.string().trim().url().optional().or(z.literal('')),
-      audioUrl: z.string().trim().url().optional().or(z.literal('')),
+      videoUrl: z.string().trim().url().refine((v) => v.startsWith('https://'), { message: 'URL must use https' }).optional().or(z.literal('')),
+      audioUrl: z.string().trim().url().refine((v) => v.startsWith('https://'), { message: 'URL must use https' }).optional().or(z.literal('')),
       locationId: z.number().int().min(1, 'Location is required'),
       gameTypeIds: z
         .array(z.number().int().positive())

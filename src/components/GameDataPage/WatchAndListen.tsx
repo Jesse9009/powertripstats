@@ -27,6 +27,7 @@ export function WatchAndListen({ gameNumber, videoUrl, audioUrl }: Props) {
     <Card>
       <CardHeader className="px-4 py-3">
         <button
+          type="button"
           className="flex w-full cursor-pointer select-none items-center justify-between"
           onClick={() => setOpen((prev) => !prev)}
           aria-expanded={open}
@@ -50,6 +51,7 @@ export function WatchAndListen({ gameNumber, videoUrl, audioUrl }: Props) {
                 title={`Initials Game ${gameNumber}`}
                 className="absolute inset-0 h-full w-full rounded"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-fullscreen"
                 allowFullScreen
               />
             </div>
@@ -61,6 +63,7 @@ export function WatchAndListen({ gameNumber, videoUrl, audioUrl }: Props) {
               className="w-full rounded"
               height="152"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              sandbox="allow-scripts allow-same-origin allow-fullscreen"
             />
           )}
         </div>
