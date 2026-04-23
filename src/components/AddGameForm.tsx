@@ -48,6 +48,8 @@ function createSchema(gameTypes: GameTypeOption[]) {
         .max(2, 'Initials combination must be 2 characters')
         .min(2, 'Initials combination is required'),
       notes: z.string().trim().optional(),
+      videoUrl: z.string().trim().optional(),
+      audioUrl: z.string().trim().optional(),
       locationId: z.number().int().min(1, 'Location is required'),
       gameTypeIds: z
         .array(z.number().int().positive())
@@ -279,6 +281,8 @@ function createDefaultValues(): GameFormData {
     playerIds: [],
     initialsCombination: '',
     notes: '',
+    videoUrl: '',
+    audioUrl: '',
     locationId: 0,
     gameTypeIds: [],
     includePrize: false,
@@ -1083,6 +1087,8 @@ export function AddGameForm({
     const payload = {
       ...data,
       notes: data.notes?.trim() || undefined,
+      videoUrl: data.videoUrl?.trim() || undefined,
+      audioUrl: data.audioUrl?.trim() || undefined,
       prizes: data.includePrize ? data.prizes : [],
       gameSponsorIds: data.includeSponsors ? data.gameSponsorIds : [],
       playerSponsors: data.includeSponsors ? data.playerSponsors : [],
@@ -1302,6 +1308,43 @@ export function AddGameForm({
                   {errors.playerIds.message}
                 </p>
               )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label htmlFor="videoUrl" className="text-sm font-medium">
+                  Video URL (optional)
+                </label>
+                <input
+                  id="videoUrl"
+                  type="url"
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  placeholder="https://www.youtube.com/embed/..."
+                  {...register('videoUrl')}
+                />
+                {errors.videoUrl && (
+                  <p className="text-xs text-destructive">
+                    {errors.videoUrl.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="audioUrl" className="text-sm font-medium">
+                  Audio Embed URL (optional)
+                </label>
+                <input
+                  id="audioUrl"
+                  type="url"
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  placeholder="https://..."
+                  {...register('audioUrl')}
+                />
+                {errors.audioUrl && (
+                  <p className="text-xs text-destructive">
+                    {errors.audioUrl.message}
+                  </p>
+                )}
+              </div>
             </div>
           </section>
 
