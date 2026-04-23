@@ -37,6 +37,8 @@ const addGameSchema = z
     playerIds: z.array(idSchema).min(1),
     initialsCombination: z.string().trim().min(1),
     notes: z.string().trim().optional(),
+    videoUrl: z.string().trim().url().optional(),
+    audioUrl: z.string().trim().url().optional(),
     locationId: idSchema,
     gameTypeIds: z.array(idSchema).min(1),
     includePrize: z.boolean(),
@@ -597,6 +599,8 @@ export async function addGame(data: AddGameInput) {
           hostParticipantId: parsed.hostParticipantId,
           initialCombinationId: initialsCombinationId,
           notes: parsed.notes?.trim() || null,
+          videoUrl: parsed.videoUrl ?? null,
+          audioUrl: parsed.audioUrl ?? null,
           locationId: parsed.locationId,
         })
         .returning({ id: games.id });
@@ -646,6 +650,8 @@ export async function updateGame(gameId: number, data: AddGameInput) {
           hostParticipantId: parsed.hostParticipantId,
           initialCombinationId: initialsCombinationId,
           notes: parsed.notes?.trim() || null,
+          videoUrl: parsed.videoUrl ?? null,
+          audioUrl: parsed.audioUrl ?? null,
           locationId: parsed.locationId,
         })
         .where(eq(games.id, gameId));
@@ -748,6 +754,8 @@ export async function getGameById(gameId: number) {
       initialsCombination: initialCombinations.combination,
       locationId: games.locationId,
       locationName: locations.name,
+      videoUrl: games.videoUrl,
+      audioUrl: games.audioUrl,
     })
     .from(games)
     .innerJoin(participants, eq(games.hostParticipantId, participants.id))
