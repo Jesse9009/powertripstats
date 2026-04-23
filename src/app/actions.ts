@@ -395,14 +395,195 @@ export async function addParticipant(data: {
   }
 }
 
+async function insertGameChildren(
+  tx: DbTransaction,
+  gameId: number,
+  parsed: AddGameInput,
+  initialsCombinationId: number,
+) {
+  const uniqueGameTypeIds = uniqueNumbers(parsed.gameTypeIds);
+  const uniquePlayerIds = uniqueNumbers(parsed.playerIds);
+
+  if (uniqueGameTypeIds.length > 0) {
+    await tx.insert(gameGameTypes).values(
+      uniqueGameTypeIds.map((gameTypeId) => ({
+        gameId,
+        gameTypeId,
+      })),
+    );
+  }
+
+  await tx.insert(gamePlayers).values(
+    uniquePlayerIds.map((playerId) => ({
+      gameId,
+      playerId,
+    })),
+  );
+
+  if (parsed.includePrize) {
+    for (const prize of parsed.prizes) {
+      const createdPrize = await tx
+        .insert(gamePrizes)
+        .values({
+          gameId,
+          prize: prize.prize,
+        })
+        .returning({ id: gamePrizes.id });
+
+      const gamePrizeId = createdPrize[0].id;
+
+      if (prize.beneficiaries.length > 0) {
+        await tx.insert(playerPrizeBeneficiaries).values(
+          prize.beneficiaries.map((beneficiary) => ({
+            gamePrizeId,
+            playerId: beneficiary.playerId,
+            pickOrder: beneficiary.pickOrder,
+            beneficiaryName: beneficiary.beneficiaryName,
+          })),
+        );
+      }
+    }
+  }
+
+  if (parsed.includeJackpot) {
+    const jackpotInitials =
+      parsed.jackpot.callerGuessInitialsCombination?.trim() ?? '';
+
+    const callerGuessInitialsCombinationId = jackpotInitials
+      ? await findOrCreateInitialCombinationId(tx, jackpotInitials)
+      : null;
+
+    await tx.insert(jackpots).values({
+      gameId,
+      oneCorrect: parsed.jackpot.oneCorrect,
+      bothCorrect: parsed.jackpot.bothCorrect,
+      callerName: parsed.jackpot.callerName?.trim() || null,
+      callerGuessInitialsCombinationId,
+    });
+  }
+
+  if (parsed.includeSponsors) {
+    const uniqueGameSponsorIds = uniqueNumbers(parsed.gameSponsorIds);
+
+    if (uniqueGameSponsorIds.length > 0) {
+      await tx.insert(gameSponsors).values(
+        uniqueGameSponsorIds.map((sponsorId) => ({
+          gameId,
+          sponsorId,
+        })),
+      );
+    }
+
+    const uniquePlayerSponsors = parsed.playerSponsors.filter(
+      (value, index, array) =>
+        index ===
+        array.findIndex(
+          (candidate) =>
+            candidate.playerId === value.playerId &&
+            candidate.sponsorId === value.sponsorId,
+        ),
+    );
+
+    if (uniquePlayerSponsors.length > 0) {
+      await tx.insert(gamePlayerSponsors).values(
+        uniquePlayerSponsors.map((entry) => ({
+          gameId,
+          playerId: entry.playerId,
+          sponsorId: entry.sponsorId,
+        })),
+      );
+    }
+  }
+
+  for (const item of parsed.items) {
+    const correctGuess = item.guesses.find((guess) => guess.isCorrect);
+    const itemAnswer =
+      correctGuess?.guess?.trim() || item.fallbackAnswer?.trim() || null;
+
+    if (!itemAnswer) {
+      throw new Error(
+        `Missing answer for item ${item.itemNumber}; no correct guess text or fallback answer.`,
+      );
+    }
+
+    const createdItem = await tx
+      .insert(gameItems)
+      .values({
+        gameId,
+        itemNumber: item.itemNumber,
+        gameItemTypeId: item.gameItemTypeId,
+        itemAnswer,
+      })
+      .returning({ id: gameItems.id });
+
+    const gameItemId = createdItem[0].id;
+
+    const createdClues = await tx
+      .insert(gameItemClues)
+      .values(
+        item.clues.map((clue, index) => ({
+          gameItemId,
+          clueNumber: index + 1,
+          clue: clue.clue,
+          isCompleted: clue.isCompleted,
+        })),
+      )
+      .returning({
+        id: gameItemClues.id,
+        clueNumber: gameItemClues.clueNumber,
+      });
+
+    const clueIdByNumber = new Map(
+      createdClues.map((clue) => [clue.clueNumber, clue.id]),
+    );
+    const lastClueId = clueIdByNumber.get(item.clues.length);
+
+    if (!lastClueId) {
+      throw new Error(`Missing last clue for game item ${gameItemId}`);
+    }
+
+    const uniqueGuesses = item.guesses.filter(
+      (value, index, array) =>
+        index ===
+        array.findIndex(
+          (candidate) => candidate.playerId === value.playerId,
+        ),
+    );
+
+    if (uniqueGuesses.length > 0) {
+      await tx.insert(gameItemGuesses).values(
+        uniqueGuesses.map((guess) => {
+          const clueNumber = guess.clueNumber ?? item.clues.length;
+          const gameItemClueId = guess.isCorrect
+            ? lastClueId
+            : clueIdByNumber.get(clueNumber);
+
+          if (!gameItemClueId) {
+            throw new Error(
+              `Missing clue ${clueNumber} for game item ${gameItemId}`,
+            );
+          }
+
+          return {
+            gameItemId,
+            gameItemClueId,
+            playerId: guess.playerId,
+            guess: guess.isCorrect ? null : guess.guess?.trim() || null,
+            clueHeard: guess.clueHeard?.trim() || null,
+            isCorrect: guess.isCorrect,
+          };
+        }),
+      );
+    }
+  }
+}
+
 export async function addGame(data: AddGameInput) {
   try {
     const parsed = addGameSchema.parse(data);
     const database = assertDb();
 
     const transactionGameId = await database.transaction(async (tx) => {
-      const uniqueGameTypeIds = uniqueNumbers(parsed.gameTypeIds);
-      const uniquePlayerIds = uniqueNumbers(parsed.playerIds);
       const initialsCombinationId = await findOrCreateInitialCombinationId(
         tx,
         parsed.initialsCombination,
@@ -422,178 +603,7 @@ export async function addGame(data: AddGameInput) {
 
       const gameId = createdGame[0].id;
 
-      if (uniqueGameTypeIds.length > 0) {
-        await tx.insert(gameGameTypes).values(
-          uniqueGameTypeIds.map((gameTypeId) => ({
-            gameId,
-            gameTypeId,
-          })),
-        );
-      }
-
-      await tx.insert(gamePlayers).values(
-        uniquePlayerIds.map((playerId) => ({
-          gameId,
-          playerId,
-        })),
-      );
-
-      if (parsed.includePrize) {
-        for (const prize of parsed.prizes) {
-          const createdPrize = await tx
-            .insert(gamePrizes)
-            .values({
-              gameId,
-              prize: prize.prize,
-            })
-            .returning({ id: gamePrizes.id });
-
-          const gamePrizeId = createdPrize[0].id;
-
-          if (prize.beneficiaries.length > 0) {
-            await tx.insert(playerPrizeBeneficiaries).values(
-              prize.beneficiaries.map((beneficiary) => ({
-                gamePrizeId,
-                playerId: beneficiary.playerId,
-                pickOrder: beneficiary.pickOrder,
-                beneficiaryName: beneficiary.beneficiaryName,
-              })),
-            );
-          }
-        }
-      }
-
-      if (parsed.includeJackpot) {
-        const jackpotInitials =
-          parsed.jackpot.callerGuessInitialsCombination?.trim() ?? '';
-
-        const callerGuessInitialsCombinationId = jackpotInitials
-          ? await findOrCreateInitialCombinationId(tx, jackpotInitials)
-          : null;
-
-        await tx.insert(jackpots).values({
-          gameId,
-          oneCorrect: parsed.jackpot.oneCorrect,
-          bothCorrect: parsed.jackpot.bothCorrect,
-          callerName: parsed.jackpot.callerName?.trim() || null,
-          callerGuessInitialsCombinationId,
-        });
-      }
-
-      if (parsed.includeSponsors) {
-        const uniqueGameSponsorIds = uniqueNumbers(parsed.gameSponsorIds);
-
-        if (uniqueGameSponsorIds.length > 0) {
-          await tx.insert(gameSponsors).values(
-            uniqueGameSponsorIds.map((sponsorId) => ({
-              gameId,
-              sponsorId,
-            })),
-          );
-        }
-
-        const uniquePlayerSponsors = parsed.playerSponsors.filter(
-          (value, index, array) =>
-            index ===
-            array.findIndex(
-              (candidate) =>
-                candidate.playerId === value.playerId &&
-                candidate.sponsorId === value.sponsorId,
-            ),
-        );
-
-        if (uniquePlayerSponsors.length > 0) {
-          await tx.insert(gamePlayerSponsors).values(
-            uniquePlayerSponsors.map((entry) => ({
-              gameId,
-              playerId: entry.playerId,
-              sponsorId: entry.sponsorId,
-            })),
-          );
-        }
-      }
-
-      for (const item of parsed.items) {
-        const correctGuess = item.guesses.find((guess) => guess.isCorrect);
-        const itemAnswer =
-          correctGuess?.guess?.trim() || item.fallbackAnswer?.trim() || null;
-
-        if (!itemAnswer) {
-          throw new Error(
-            `Missing answer for item ${item.itemNumber}; no correct guess text or fallback answer.`,
-          );
-        }
-
-        const createdItem = await tx
-          .insert(gameItems)
-          .values({
-            gameId,
-            itemNumber: item.itemNumber,
-            gameItemTypeId: item.gameItemTypeId,
-            itemAnswer,
-          })
-          .returning({ id: gameItems.id });
-
-        const gameItemId = createdItem[0].id;
-
-        const createdClues = await tx
-          .insert(gameItemClues)
-          .values(
-            item.clues.map((clue, index) => ({
-              gameItemId,
-              clueNumber: index + 1,
-              clue: clue.clue,
-              isCompleted: clue.isCompleted,
-            })),
-          )
-          .returning({
-            id: gameItemClues.id,
-            clueNumber: gameItemClues.clueNumber,
-          });
-
-        const clueIdByNumber = new Map(
-          createdClues.map((clue) => [clue.clueNumber, clue.id]),
-        );
-        const lastClueId = clueIdByNumber.get(item.clues.length);
-
-        if (!lastClueId) {
-          throw new Error(`Missing last clue for game item ${gameItemId}`);
-        }
-
-        const uniqueGuesses = item.guesses.filter(
-          (value, index, array) =>
-            index ===
-            array.findIndex(
-              (candidate) => candidate.playerId === value.playerId,
-            ),
-        );
-
-        if (uniqueGuesses.length > 0) {
-          await tx.insert(gameItemGuesses).values(
-            uniqueGuesses.map((guess) => {
-              const clueNumber = guess.clueNumber ?? item.clues.length;
-              const gameItemClueId = guess.isCorrect
-                ? lastClueId
-                : clueIdByNumber.get(clueNumber);
-
-              if (!gameItemClueId) {
-                throw new Error(
-                  `Missing clue ${clueNumber} for game item ${gameItemId}`,
-                );
-              }
-
-              return {
-                gameItemId,
-                gameItemClueId,
-                playerId: guess.playerId,
-                guess: guess.isCorrect ? null : guess.guess?.trim() || null,
-                clueHeard: guess.clueHeard?.trim() || null,
-                isCorrect: guess.isCorrect,
-              };
-            }),
-          );
-        }
-      }
+      await insertGameChildren(tx, gameId, parsed, initialsCombinationId);
 
       return gameId;
     });
@@ -613,6 +623,101 @@ export async function addGame(data: AddGameInput) {
     }
 
     return { success: false, error: 'Failed to add game' };
+  }
+}
+
+export async function updateGame(gameId: number, data: AddGameInput) {
+  try {
+    const parsed = addGameSchema.parse(data);
+    const database = assertDb();
+
+    await database.transaction(async (tx) => {
+      const initialsCombinationId = await findOrCreateInitialCombinationId(
+        tx,
+        parsed.initialsCombination,
+      );
+
+      // Update the games row
+      await tx
+        .update(games)
+        .set({
+          gameNumber: parsed.gameNumber,
+          gameDate: new Date(parsed.gameDate),
+          hostParticipantId: parsed.hostParticipantId,
+          initialCombinationId: initialsCombinationId,
+          notes: parsed.notes?.trim() || null,
+          locationId: parsed.locationId,
+        })
+        .where(eq(games.id, gameId));
+
+      // Delete all child rows in FK-safe order
+      const gameItemIds = await tx
+        .select({ id: gameItems.id })
+        .from(gameItems)
+        .where(eq(gameItems.gameId, gameId));
+
+      const itemIds = gameItemIds.map(i => i.id);
+
+      if (itemIds.length > 0) {
+        const gameItemClueIds = await tx
+          .select({ id: gameItemClues.id })
+          .from(gameItemClues)
+          .where(sql`${gameItemClues.gameItemId} IN ${itemIds}`);
+
+        const clueIds = gameItemClueIds.map(c => c.id);
+
+        if (clueIds.length > 0) {
+          await tx.delete(gameItemGuesses).where(
+            sql`${gameItemGuesses.gameItemClueId} IN ${clueIds}`,
+          );
+        }
+
+        await tx.delete(gameItemClues).where(
+          sql`${gameItemClues.gameItemId} IN ${itemIds}`,
+        );
+      }
+
+      await tx.delete(gameItems).where(eq(gameItems.gameId, gameId));
+
+      const gamePrizesRows = await tx
+        .select({ id: gamePrizes.id })
+        .from(gamePrizes)
+        .where(eq(gamePrizes.gameId, gameId));
+
+      const prizeIds = gamePrizesRows.map(p => p.id);
+
+      if (prizeIds.length > 0) {
+        await tx.delete(playerPrizeBeneficiaries).where(
+          sql`${playerPrizeBeneficiaries.gamePrizeId} IN ${prizeIds}`,
+        );
+      }
+
+      await tx.delete(gamePrizes).where(eq(gamePrizes.gameId, gameId));
+      await tx.delete(gamePlayerSponsors).where(eq(gamePlayerSponsors.gameId, gameId));
+      await tx.delete(gameSponsors).where(eq(gameSponsors.gameId, gameId));
+      await tx.delete(jackpots).where(eq(jackpots.gameId, gameId));
+      await tx.delete(gamePlayers).where(eq(gamePlayers.gameId, gameId));
+      await tx.delete(gameGameTypes).where(eq(gameGameTypes.gameId, gameId));
+
+      // Re-insert all children
+      await insertGameChildren(tx, gameId, parsed, initialsCombinationId);
+    });
+
+    revalidatePath('/admin/games');
+    revalidatePath('/games');
+    revalidatePath(`/games/${gameId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating game:', error);
+
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: 'Please correct the highlighted fields.',
+      };
+    }
+
+    return { success: false, error: 'Failed to update game' };
   }
 }
 
@@ -636,10 +741,12 @@ export async function getGameById(gameId: number) {
       gameNumber: games.gameNumber,
       gameDate: games.gameDate,
       notes: games.notes,
+      hostParticipantId: games.hostParticipantId,
       hostFirstName: participants.firstName,
       hostLastName: participants.lastName,
       hostNickname: participants.nickname,
       initialsCombination: initialCombinations.combination,
+      locationId: games.locationId,
       locationName: locations.name,
     })
     .from(games)
@@ -650,6 +757,12 @@ export async function getGameById(gameId: number) {
     .limit(1);
 
   if (!game[0]) return null;
+
+  // Fetch game types
+  const gameTypesData = await db
+    .select({ gameTypeId: gameGameTypes.gameTypeId })
+    .from(gameGameTypes)
+    .where(eq(gameGameTypes.gameId, gameId));
 
   // Fetch players with sponsors
   const gamePlayersData = await db
@@ -678,6 +791,7 @@ export async function getGameById(gameId: number) {
       beneficiaryId: playerPrizeBeneficiaries.playerId,
       beneficiaryFirstName: participants.firstName,
       beneficiaryLastName: participants.lastName,
+      beneficiaryName: playerPrizeBeneficiaries.beneficiaryName,
       pickOrder: playerPrizeBeneficiaries.pickOrder,
     })
     .from(gamePrizes)
@@ -691,6 +805,7 @@ export async function getGameById(gameId: number) {
     .select({
       itemId: gameItems.id,
       itemNumber: gameItems.itemNumber,
+      gameItemTypeId: gameItems.gameItemTypeId,
       itemType: gameItemTypes.type,
       itemAnswer: gameItems.itemAnswer,
       clueId: gameItemClues.id,
@@ -704,6 +819,7 @@ export async function getGameById(gameId: number) {
       guessText: gameItemGuesses.guess,
       isCorrect: gameItemGuesses.isCorrect,
       guessClueNumber: gameItemClues.clueNumber,
+      guessClueHeard: gameItemGuesses.clueHeard,
     })
     .from(gameItems)
     .innerJoin(gameItemTypes, eq(gameItems.gameItemTypeId, gameItemTypes.id))
@@ -736,6 +852,7 @@ export async function getGameById(gameId: number) {
   // Fetch game sponsors
   const gameSponsorsData = await db
     .select({
+      sponsorId: gameSponsors.sponsorId,
       sponsorName: sponsors.name,
     })
     .from(gameSponsors)
@@ -743,36 +860,39 @@ export async function getGameById(gameId: number) {
     .where(eq(gameSponsors.gameId, gameId));
 
   // Transform data - FIXED to deduplicate
-  const players = new Map<number, { firstName: string; lastName: string; nickname: string | null; sponsors: string[] }>();
+  const players = new Map<number, { firstName: string; lastName: string; nickname: string | null; sponsors: string[]; sponsorIds: number[] }>();
   gamePlayersData.forEach(p => {
     if (!players.has(p.playerId)) {
-      players.set(p.playerId, { firstName: p.firstName, lastName: p.lastName, nickname: p.nickname, sponsors: [] });
+      players.set(p.playerId, { firstName: p.firstName, lastName: p.lastName, nickname: p.nickname, sponsors: [], sponsorIds: [] });
     }
     if (p.sponsorId && p.sponsorName) {
       const existing = players.get(p.playerId)!;
-      if (!existing.sponsors.includes(p.sponsorName)) {
+      if (!existing.sponsorIds.includes(p.sponsorId)) {
         existing.sponsors.push(p.sponsorName);
+        existing.sponsorIds.push(p.sponsorId);
       }
     }
   });
 
-  const prizes = new Map<number, { prize: string; beneficiaries: { name: string; pickOrder: number }[] }>();
+  const prizes = new Map<number, { prize: string; beneficiaries: { playerId: number; name: string; beneficiaryName: string; pickOrder: number }[] }>();
   prizesData.forEach(p => {
     if (!prizes.has(p.prizeId)) {
       prizes.set(p.prizeId, { prize: p.prize, beneficiaries: [] });
     }
     if (p.beneficiaryId && p.beneficiaryFirstName && p.beneficiaryLastName && p.pickOrder !== null) {
       prizes.get(p.prizeId)!.beneficiaries.push({
+        playerId: p.beneficiaryId,
         name: `${p.beneficiaryFirstName} ${p.beneficiaryLastName}`,
+        beneficiaryName: p.beneficiaryName ?? '',
         pickOrder: p.pickOrder,
       });
     }
   });
 
-  const items = new Map<number, { itemNumber: number; itemType: string; answer: string; clues: { id: number; number: number; text: string; completed: boolean }[]; guesses: { playerId: number; playerName: string; guess: string | null; isCorrect: boolean; clueNumber: number }[] }>();
+  const items = new Map<number, { itemNumber: number; gameItemTypeId: number; itemType: string; answer: string; clues: { id: number; number: number; text: string; completed: boolean }[]; guesses: { playerId: number; playerName: string; guess: string | null; clueHeard: string | null; isCorrect: boolean; clueNumber: number }[] }>();
   filteredItemsData.forEach(i => {
     if (!items.has(i.itemId)) {
-      items.set(i.itemId, { itemNumber: i.itemNumber, itemType: i.itemType, answer: i.itemAnswer, clues: [], guesses: [] });
+      items.set(i.itemId, { itemNumber: i.itemNumber, gameItemTypeId: i.gameItemTypeId, itemType: i.itemType, answer: i.itemAnswer, clues: [], guesses: [] });
     }
     // FIXED: Check for duplicate before pushing and ensure clue has required non-null fields
     if (i.clueId && i.clueNumber !== null && i.clueText !== null && i.clueCompleted !== null && !items.get(i.itemId)!.clues.some(c => c.id === i.clueId)) {
@@ -784,6 +904,7 @@ export async function getGameById(gameId: number) {
         playerId: i.guessPlayerId,
         playerName: `${i.guessPlayerFirstName || ''} ${i.guessPlayerLastName || ''}`,
         guess: i.guessText,
+        clueHeard: i.guessClueHeard,
         isCorrect: i.isCorrect,
         clueNumber: i.guessClueNumber,
       });
@@ -792,10 +913,12 @@ export async function getGameById(gameId: number) {
 
   return {
     ...game[0],
-    players: Array.from(players.values()),
+    gameTypeIds: gameTypesData.map(gt => gt.gameTypeId),
+    players: Array.from(players.entries()).map(([playerId, p]) => ({ playerId, ...p })),
     prizes: Array.from(prizes.values()),
     items: Array.from(items.values()).sort((a, b) => a.itemNumber - b.itemNumber),
     jackpot: jackpotData[0] || null,
     gameSponsors: gameSponsorsData.map(s => s.sponsorName),
+    gameSponsorIds: gameSponsorsData.map(s => s.sponsorId),
   };
 }

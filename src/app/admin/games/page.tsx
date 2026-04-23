@@ -94,12 +94,13 @@ export default async function GamesPage({ searchParams }: PageProps) {
                 <TableHead>Host</TableHead>
                 <TableHead>Initials</TableHead>
                 <TableHead>Winner</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {gamesData?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No games yet.
                   </TableCell>
                 </TableRow>
@@ -116,6 +117,11 @@ export default async function GamesPage({ searchParams }: PageProps) {
                     <TableCell>{game.initialsCombination}</TableCell>
                     <TableCell>
                       {game.winner ? game.winner : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/games/${game.id}/edit`}>Edit</Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

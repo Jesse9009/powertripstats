@@ -15,7 +15,7 @@ import {
 import { z } from 'zod';
 import { toast } from 'sonner';
 
-import { addGame } from '@/app/actions';
+import { addGame, updateGame } from '@/app/actions';
 import {
   SearchableCombobox,
   SearchableMultiCombobox,
@@ -230,7 +230,7 @@ function createSchema(gameTypes: GameTypeOption[]) {
     });
 }
 
-type GameFormData =
+export type GameFormData =
   ReturnType<typeof createSchema> extends z.ZodType<infer T> ? T : never;
 
 type ParticipantOption = {
@@ -266,6 +266,9 @@ interface AddGameFormProps {
   gameItemTypes: GameItemTypeOption[];
   sponsors: SponsorOption[];
   locations: LocationOption[];
+  mode?: 'create' | 'edit';
+  gameId?: number;
+  defaultValues?: GameFormData;
 }
 
 function createDefaultValues(): GameFormData {
@@ -915,6 +918,9 @@ export function AddGameForm({
   gameItemTypes,
   sponsors,
   locations,
+  mode = 'create',
+  gameId,
+  defaultValues,
 }: AddGameFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -931,11 +937,21 @@ export function AddGameForm({
     setValue,
     getValues,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<GameFormData>({
     resolver: zodResolver(schema),
-    defaultValues: createDefaultValues(),
+    defaultValues: defaultValues ?? createDefaultValues(),
   });
+
+  // Warn about unsaved changes when navigating away
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   const itemArray = useFieldArray({ control, name: 'items' });
   const prizeArray = useFieldArray({ control, name: 'prizes' });
@@ -1102,16 +1118,24 @@ export function AddGameForm({
     console.log('Game Data:', JSON.stringify(payload));
 
     try {
-      const result = await addGame(payload);
+      const result =
+        mode === 'edit' && gameId !== undefined
+          ? await updateGame(gameId, payload)
+          : await addGame(payload);
 
       if (!result.success) {
         setServerError(result.error ?? 'Something went wrong');
         return;
       }
 
-      toast.success('Game saved successfully!');
-      reset(createDefaultValues());
-      router.refresh();
+      toast.success(mode === 'edit' ? 'Game updated successfully!' : 'Game saved successfully!');
+
+      if (mode === 'edit') {
+        router.push('/admin/games');
+      } else {
+        reset(createDefaultValues());
+        router.refresh();
+      }
     } catch {
       setServerError('Network error. Please try again.');
     }
@@ -1120,9 +1144,11 @@ export function AddGameForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add Game</CardTitle>
+        <CardTitle>{mode === 'edit' ? 'Edit Game' : 'Add Game'}</CardTitle>
         <CardDescription>
-          Enter all available data for one game record.
+          {mode === 'edit'
+            ? 'Update the data for this game record.'
+            : 'Enter all available data for one game record.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1615,9 +1641,24 @@ export function AddGameForm({
             </p>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving Game…' : 'Save Game'}
-          </Button>
+          <div className="flex gap-3">
+            {mode === 'edit' && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => router.push('/admin/games')}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" className={mode === 'edit' ? 'flex-1' : 'w-full'} disabled={isSubmitting}>
+              {isSubmitting
+                ? mode === 'edit' ? 'Saving Changes…' : 'Saving Game…'
+                : mode === 'edit' ? 'Save Changes' : 'Save Game'}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
