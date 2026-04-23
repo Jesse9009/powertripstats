@@ -58,6 +58,8 @@ export const games = sqliteTable("games", {
     .notNull()
     .references(() => initialCombinations.id),
   notes: text("notes"),
+  videoUrl: text("video_url"),
+  audioUrl: text("audio_url"),
   locationId: integer("location_id").references(() => locations.id),
 });
 
