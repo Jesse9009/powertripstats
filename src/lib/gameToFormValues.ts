@@ -90,6 +90,8 @@ export function gameToFormValues(game: GameData): GameFormData {
     playerIds: game.players.map((p) => p.playerId),
     initialsCombination: game.initialsCombination,
     notes: game.notes ?? '',
+    videoUrl: game.videoUrl ?? '',
+    audioUrl: game.audioUrl ?? '',
     locationId: game.locationId ?? 0,
     gameTypeIds: game.gameTypeIds,
     includePrize,
