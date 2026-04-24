@@ -5,7 +5,7 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { Switch } from '@/components/ui/switch';
 
 export function SpoilersToggle() {
-  const { showSpoilers, setShowSpoilers } = useSiteSettings();
+  const { showSpoilers, handleShowSpoilerChange } = useSiteSettings();
   const Icon = showSpoilers ? Eye : EyeOff;
 
   return (
@@ -15,7 +15,7 @@ export function SpoilersToggle() {
           ? 'bg-primary/8 text-primary'
           : 'text-muted-foreground hover:bg-secondary'
       }`}
-      onClick={() => setShowSpoilers(!showSpoilers)}
+      onClick={() => handleShowSpoilerChange(!showSpoilers)}
     >
       <Icon size={15} strokeWidth={2} />
       <label
@@ -27,7 +27,7 @@ export function SpoilersToggle() {
       <Switch
         id="show-spoilers"
         checked={showSpoilers}
-        onCheckedChange={setShowSpoilers}
+        onCheckedChange={handleShowSpoilerChange}
         onClick={(e) => e.stopPropagation()}
       />
     </div>

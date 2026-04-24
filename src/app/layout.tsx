@@ -50,6 +50,11 @@ export default function RootLayout({
             __html: `(function(){try{var s=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(s===null&&p)){document.documentElement.classList.add('dark');}}catch(e){}})();`,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('showSpoilers')==='true'){document.documentElement.setAttribute('data-show-spoilers','true');}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <SiteSettingsProvider>

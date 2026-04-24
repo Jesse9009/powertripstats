@@ -1,11 +1,13 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type SiteSettingsContextValue = {
   showSpoilers: boolean;
-  toggleSpoilers: () => void;
-  setShowSpoilers: (value: boolean) => void;
+  handleShowSpoilerChange: (checked: boolean) => void;
 };
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue | undefined>(
@@ -19,17 +21,27 @@ export function SiteSettingsProvider({
 }) {
   const [showSpoilers, setShowSpoilers] = useState(false);
 
-  const value = useMemo(
+  useIsomorphicLayoutEffect(() => {
+    const stored = document.documentElement.getAttribute('data-show-spoilers') === 'true';
+    setShowSpoilers(stored);
+    document.documentElement.setAttribute('data-spoilers-ready', '');
+  }, []);
+
+  const handleShowSpoilerChange = (checked: boolean) => {
+    setShowSpoilers(checked);
+    localStorage.setItem('showSpoilers', checked.toString());
+  };
+
+  const ctx = useMemo(
     () => ({
       showSpoilers,
-      toggleSpoilers: () => setShowSpoilers((prev) => !prev),
-      setShowSpoilers,
+      handleShowSpoilerChange,
     }),
     [showSpoilers],
   );
 
   return (
-    <SiteSettingsContext.Provider value={value}>
+    <SiteSettingsContext.Provider value={ctx}>
       {children}
     </SiteSettingsContext.Provider>
   );

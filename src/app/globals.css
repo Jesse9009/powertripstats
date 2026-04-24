@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
+html[data-show-spoilers="true"]:not([data-spoilers-ready]) body {
+  visibility: hidden;
+}
+
 @theme inline {
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
