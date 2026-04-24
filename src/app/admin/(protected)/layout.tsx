@@ -1,9 +1,9 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { getAuth } from "@/lib/auth";
-import { AdminLogoutButton } from "@/components/AdminLogoutButton";
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getAuth } from '@/lib/auth.mts';
+import { AdminLogoutButton } from '@/components/AdminLogoutButton';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function AdminProtectedLayout({
   children,
@@ -12,8 +12,8 @@ export default async function AdminProtectedLayout({
 }) {
   const session = await getAuth().api.getSession({ headers: await headers() });
 
-  if (!session || session.user.role !== "admin") {
-    redirect("/admin/login");
+  if (!session || session.user.role !== 'admin') {
+    redirect('/admin/login');
   }
 
   return (

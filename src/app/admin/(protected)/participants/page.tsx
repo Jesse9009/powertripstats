@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getDb } from '@/db/client';
+import { getDb } from '@/db/client.mts';
 
 import { AddParticipantForm } from '@/components/AddParticipantForm';
 import { getParticipants, getTotalParticipants } from '@/app/actions';
@@ -116,7 +116,9 @@ export default async function ParticipantsPage({ searchParams }: PageProps) {
                   asChild
                   disabled={page <= 1}
                 >
-                  <Link href={`/admin/participants?page=${page - 1}`}>Previous</Link>
+                  <Link href={`/admin/participants?page=${page - 1}`}>
+                    Previous
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"
@@ -124,7 +126,9 @@ export default async function ParticipantsPage({ searchParams }: PageProps) {
                   asChild
                   disabled={page >= totalPages}
                 >
-                  <Link href={`/admin/participants?page=${page + 1}`}>Next</Link>
+                  <Link href={`/admin/participants?page=${page + 1}`}>
+                    Next
+                  </Link>
                 </Button>
               </div>
             </div>

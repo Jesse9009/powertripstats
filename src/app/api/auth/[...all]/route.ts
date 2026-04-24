@@ -1,6 +1,6 @@
-import { getAuth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
-import type { NextRequest } from "next/server";
+import { getAuth } from '@/lib/auth.mts';
+import { toNextJsHandler } from 'better-auth/next-js';
+import type { NextRequest } from 'next/server';
 
 const handler = () => toNextJsHandler(getAuth());
 

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getDb } from '@/db/client';
+import { getDb } from '@/db/client.mts';
 import { formatGameDateUTC } from '@/lib/utils';
 
 import { getGameFormOptions, getGames, getTotalGames } from '@/app/actions';
@@ -80,7 +80,8 @@ export default async function GamesPage({ searchParams }: PageProps) {
         <CardContent className="space-y-4">
           {!db && (
             <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-              Database env vars are not set. Copy <code>.env.local.example</code> to <code>.env.local</code>, add
+              Database env vars are not set. Copy{' '}
+              <code>.env.local.example</code> to <code>.env.local</code>, add
               your Turso credentials, run migrations, then refresh.
             </p>
           )}
@@ -100,14 +101,19 @@ export default async function GamesPage({ searchParams }: PageProps) {
             <TableBody>
               {gamesData?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-muted-foreground"
+                  >
                     No games yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 gamesData?.map((game) => (
                   <TableRow key={game.id}>
-                    <TableCell className="text-muted-foreground">{game.id}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {game.id}
+                    </TableCell>
                     <TableCell>{game.gameNumber}</TableCell>
                     <TableCell>{formatGameDateUTC(game.gameDate)}</TableCell>
                     <TableCell>
@@ -115,9 +121,7 @@ export default async function GamesPage({ searchParams }: PageProps) {
                       {game.hostNickname ? ` (${game.hostNickname})` : ''}
                     </TableCell>
                     <TableCell>{game.initialsCombination}</TableCell>
-                    <TableCell>
-                      {game.winner ? game.winner : '-'}
-                    </TableCell>
+                    <TableCell>{game.winner ? game.winner : '-'}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/admin/games/${game.id}/edit`}>Edit</Link>
@@ -137,7 +141,12 @@ export default async function GamesPage({ searchParams }: PageProps) {
               <Button variant="outline" size="sm" asChild disabled={page <= 1}>
                 <Link href={`/admin/games?page=${page - 1}`}>Previous</Link>
               </Button>
-              <Button variant="outline" size="sm" asChild disabled={page >= totalPages}>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                disabled={page >= totalPages}
+              >
                 <Link href={`/admin/games?page=${page + 1}`}>Next</Link>
               </Button>
             </div>

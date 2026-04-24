@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { GamesTable } from '@/components/GamesTable';
-import { getDb } from '@/db/client';
+import { getDb } from '@/db/client.mts';
 
 import { getGames, getTotalGames } from '../actions';
 
@@ -46,12 +46,17 @@ export default async function GamesPage({ searchParams }: PageProps) {
         <CardContent className="space-y-4">
           {!db && (
             <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-              Database env vars are not set. Copy <code>.env.local.example</code> to <code>.env.local</code>, add
+              Database env vars are not set. Copy{' '}
+              <code>.env.local.example</code> to <code>.env.local</code>, add
               your Turso credentials, run migrations, then refresh.
             </p>
           )}
 
-          <GamesTable games={gamesData ?? []} page={page} totalPages={totalPages} />
+          <GamesTable
+            games={gamesData ?? []}
+            page={page}
+            totalPages={totalPages}
+          />
         </CardContent>
       </Card>
     </main>
