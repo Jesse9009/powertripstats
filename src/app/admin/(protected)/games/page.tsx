@@ -20,7 +20,7 @@ import {
 import { getDb } from '@/db/client';
 import { formatGameDateUTC } from '@/lib/utils';
 
-import { getGameFormOptions, getGames, getTotalGames } from '../../actions';
+import { getGameFormOptions, getGames, getTotalGames } from '@/app/actions';
 
 export const dynamic = 'force-dynamic';
 

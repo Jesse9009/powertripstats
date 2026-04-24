@@ -19,7 +19,7 @@ import {
 import { getDb } from '@/db/client';
 
 import { AddParticipantForm } from '@/components/AddParticipantForm';
-import { getParticipants, getTotalParticipants } from '../../actions';
+import { getParticipants, getTotalParticipants } from '@/app/actions';
 
 export const dynamic = 'force-dynamic';
 
