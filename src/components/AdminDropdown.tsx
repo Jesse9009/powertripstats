@@ -6,8 +6,10 @@ import { ChevronDown } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 
 import { adminRoutes } from '@/config/adminRoutes';
+import { authClient } from '@/lib/auth-client';
 
 export function AdminDropdown() {
+  const { data: session, isPending } = authClient.useSession();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -30,6 +32,11 @@ export function AdminDropdown() {
       };
     }
   }, [isOpen]);
+
+  // Hide dropdown while session is loading or if user is not an admin
+  if (isPending || session?.user?.role !== 'admin') {
+    return null;
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
