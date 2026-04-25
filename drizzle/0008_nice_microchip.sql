@@ -1,0 +1,1 @@
+ALTER TABLE `participants` ADD `middle_name` text;

@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 import { addGame, updateGame } from '@/app/actions';
+import { formatFullName } from '@/lib/utils';
 import {
   SearchableCombobox,
   SearchableMultiCombobox,
@@ -238,6 +239,7 @@ export type GameFormData =
 type ParticipantOption = {
   id: number;
   firstName: string;
+  middleName: string | null;
   lastName: string;
   nickname: string | null;
 };
@@ -310,7 +312,7 @@ function createDefaultValues(): GameFormData {
 
 function displayParticipant(participant: ParticipantOption) {
   const nickname = participant.nickname?.trim();
-  const base = `${participant.firstName} ${participant.lastName}`;
+  const base = formatFullName(participant.firstName, participant.middleName, participant.lastName);
   return nickname ? `${base} (${nickname})` : base;
 }
 

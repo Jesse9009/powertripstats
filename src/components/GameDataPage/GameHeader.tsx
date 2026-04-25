@@ -3,7 +3,7 @@
 import { EyeOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatGameDateUTC } from '@/lib/utils';
+import { formatFullName, formatGameDateUTC } from '@/lib/utils';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import {
   computeScores,
@@ -117,7 +117,7 @@ export function GameHeader({
                 return (
                   <div key={name} className="flex items-center gap-2">
                     <span className="font-medium">
-                      {p.firstName} {p.lastName}
+                      {formatFullName(p.firstName, p.middleName, p.lastName)}
                     </span>
                     {p.nickname && (
                       <span className="text-muted-foreground">

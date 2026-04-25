@@ -19,6 +19,7 @@ import { addParticipant } from '@/app/actions';
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
+  middleName: z.string().optional(),
   lastName: z.string().min(1, 'Last name is required'),
   nickname: z.string().optional(),
 });
@@ -43,6 +44,7 @@ export function AddParticipantForm() {
     try {
       const res = await addParticipant({
         firstName: data.firstName,
+        middleName: data.middleName || undefined,
         lastName: data.lastName,
         nickname: data.nickname || undefined,
       });
@@ -81,6 +83,20 @@ export function AddParticipantForm() {
                 {errors.firstName.message}
               </p>
             )}
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="middleName" className="text-sm font-medium">
+              Middle Name{' '}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </label>
+            <Input
+              id="middleName"
+              placeholder="Allan"
+              {...register('middleName')}
+            />
           </div>
 
           <div className="space-y-1">

@@ -73,6 +73,7 @@ export default async function ParticipantsPage({ searchParams }: PageProps) {
                 <TableRow>
                   <TableHead className="w-16">ID</TableHead>
                   <TableHead>First Name</TableHead>
+                  <TableHead>Middle Name</TableHead>
                   <TableHead>Last Name</TableHead>
                   <TableHead>Nickname</TableHead>
                 </TableRow>
@@ -81,7 +82,7 @@ export default async function ParticipantsPage({ searchParams }: PageProps) {
                 {data?.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center text-muted-foreground"
                     >
                       No participants yet.
@@ -94,6 +95,9 @@ export default async function ParticipantsPage({ searchParams }: PageProps) {
                         {p.id}
                       </TableCell>
                       <TableCell>{p.firstName}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {p.middleName ?? '—'}
+                      </TableCell>
                       <TableCell>{p.lastName}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {p.nickname ?? '—'}
