@@ -72,7 +72,7 @@ export function GamesTable({ games, page, totalPages }: GamesTableProps) {
               <TableRow key={game.id}>
                 <TableCell>
                   <Link
-                    href={`/games/${game.id}`}
+                    href={`/games/${game.gameNumber}`}
                     className="text-primary hover:underline font-medium"
                   >
                     {game.gameNumber}

@@ -50,9 +50,9 @@ Always check `if (!db)` when using `getDb()` before running queries.
 
 ### Schema
 
-All Drizzle table definitions and inferred TypeScript types are in `src/db/schema.ts`. The domain models a trivia game show ("PowerTrip"):
+All Drizzle table definitions and inferred TypeScript types are in `src/db/schema.mts`. The domain models a trivia game show ("PowerTrip"):
 
-- **`games`** — core record with `gameNumber`, `gameDate` (timestamp_ms), host participant, `initialCombinationId` (2-char letter combo for jackpot guesses), and optional `locationId`.
+- **`games`** — core record with `gameNumber` (unique, used in URLs), `gameDate` (timestamp_ms), host participant, `initialCombinationId` (2-char letter combo for jackpot guesses), and optional `locationId`.
 - **`gameItems`** — individual trivia items in a game, each with an `itemAnswer`.
 - **`gameItemClues`** — ordered clues for each item (`clueNumber`, `isCompleted`).
 - **`gameItemGuesses`** — one guess per player per item, linked to the clue they guessed on; `isCorrect` is stored explicitly.
@@ -71,11 +71,13 @@ All Drizzle table definitions and inferred TypeScript types are in `src/db/schem
 
 ### Game detail page
 
-`/games/[id]` assembles data via `getGameById` (multiple sequential DB queries that are then deduplicated and merged in JS) and passes it to section components in `src/components/GameDataPage/`. The `ItemsTimeline` component is a `'use client'` component that manages per-clue reveal state.
+`/games/[gameNumber]` assembles data via `getGameByGameNumber` (multiple sequential DB queries that are then deduplicated and merged in JS) and passes it to section components in `src/components/GameDataPage/`. The `ItemsTimeline` component is a `'use client'` component that manages per-clue reveal state.
+
+The admin edit route is `/admin/games/[gameNumber]/edit`. Both routes accept the user-facing game number (not the DB `id`) in the URL. `getGameByGameNumber` queries by `games.gameNumber`, then uses the returned `game.id` for all child table lookups.
 
 ### Cache revalidation
 
-`addGame` calls `revalidatePath` for `/admin/games`, `/games`, and the specific game page after a successful insert. A POST-only API route at `/api/revalidate-game/[id]` allows manual revalidation. Admin game list uses `export const dynamic = 'force-dynamic'`.
+`addGame` calls `revalidatePath` for `/admin/games`, `/games`, and the specific game page after a successful insert. A POST-only API route at `/api/revalidate-game/[gameNumber]` allows manual revalidation. Admin game list uses `export const dynamic = 'force-dynamic'`.
 
 ### Dates
 
@@ -86,4 +88,4 @@ Game dates are stored as integer milliseconds (Drizzle `timestamp_ms` mode). Alw
 - `src/components/ui/` — shadcn/ui-style primitives (Button, Card, Table, Input, Switch, Badge, Combobox, ConfirmDialog, Toaster).
 - `cn()` from `src/lib/utils.ts` for conditional className merging.
 - Admin routes are defined in `src/config/adminRoutes.ts` and rendered in `AdminDropdown`.
-- `Breadcrumbs` calls `getGameNumber` (a server action) client-side via `useEffect` to resolve numeric IDs to game numbers for display.
+- `Breadcrumbs` reads the game number directly from the URL segment — no DB call needed since URLs already use the game number.

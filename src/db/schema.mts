@@ -49,7 +49,7 @@ export const locations = sqliteTable("locations", {
 
 export const games = sqliteTable("games", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  gameNumber: integer("game_number").notNull(),
+  gameNumber: integer("game_number").notNull().unique(),
   gameDate: integer("game_date", { mode: "timestamp_ms" }).notNull(),
   hostParticipantId: integer("host_participant_id")
     .notNull()

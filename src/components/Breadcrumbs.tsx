@@ -2,9 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { getGameNumber } from '@/app/actions';
 
 const LABELS: Record<string, string> = {
   games: 'Games',
@@ -14,20 +12,10 @@ const LABELS: Record<string, string> = {
 
 export function Breadcrumbs() {
   const pathname = usePathname();
-  const [gameNumber, setGameNumber] = useState<number | null>(null);
 
   const segments = pathname.split('/').filter(Boolean);
 
   const isGameDetailPage = segments[0] === 'games' && segments.length === 2;
-  const rawGameId = isGameDetailPage ? parseInt(segments[1], 10) : NaN;
-
-  useEffect(() => {
-    if (!isGameDetailPage || isNaN(rawGameId)) {
-      setGameNumber(null);
-      return;
-    }
-    getGameNumber(rawGameId).then(setGameNumber);
-  }, [isGameDetailPage, rawGameId]);
 
   if (segments.length <= 1) return null;
 
@@ -37,8 +25,8 @@ export function Breadcrumbs() {
     const isNumeric = /^\d+$/.test(segment);
 
     let label: string;
-    if (isNumeric) {
-      label = gameNumber !== null ? `Game #${gameNumber}` : `Game #${segment}`;
+    if (isNumeric && isGameDetailPage && index === 1) {
+      label = `Game #${segment}`;
     } else {
       label = LABELS[segment] ?? segment;
     }

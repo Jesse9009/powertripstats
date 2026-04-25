@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `games_game_number_unique` ON `games` (`game_number`);

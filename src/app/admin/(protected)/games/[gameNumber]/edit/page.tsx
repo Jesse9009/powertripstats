@@ -1,23 +1,23 @@
 import { notFound } from 'next/navigation';
 
 import { AddGameForm } from '@/components/AddGameForm';
-import { getGameById, getGameFormOptions } from '@/app/actions';
+import { getGameByGameNumber, getGameFormOptions } from '@/app/actions';
 import { gameToFormValues } from '@/lib/gameToFormValues';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ gameNumber: string }>;
 }
 
 export default async function EditGamePage({ params }: PageProps) {
-  const { id } = await params;
-  const gameId = parseInt(id, 10);
+  const { gameNumber } = await params;
+  const parsedGameNumber = parseInt(gameNumber, 10);
 
-  if (isNaN(gameId) || gameId <= 0) {
+  if (isNaN(parsedGameNumber) || parsedGameNumber <= 0) {
     notFound();
   }
 
   const [game, options] = await Promise.all([
-    getGameById(gameId),
+    getGameByGameNumber(parsedGameNumber),
     getGameFormOptions(),
   ]);
 
@@ -38,7 +38,7 @@ export default async function EditGamePage({ params }: PageProps) {
         sponsors={options.sponsors}
         locations={options.locations}
         mode="edit"
-        gameId={gameId}
+        gameId={game.id}
         defaultValues={defaultValues}
       />
     </main>

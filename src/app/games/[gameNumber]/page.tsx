@@ -1,23 +1,23 @@
 import { notFound } from 'next/navigation';
-import { getGameById } from '@/app/actions';
+import { getGameByGameNumber } from '@/app/actions';
 import { GameHeader } from '@/components/GameDataPage/GameHeader';
 import { ItemsGrid } from '@/components/GameDataPage/ItemsGrid';
 import { FinalStandings } from '@/components/GameDataPage/FinalStandings';
 import { WatchAndListen } from '@/components/GameDataPage/WatchAndListen';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ gameNumber: string }>;
 }
 
 export default async function GamePage({ params }: PageProps) {
-  const { id } = await params;
-  const gameId = parseInt(id, 10);
+  const { gameNumber } = await params;
+  const parsedGameNumber = parseInt(gameNumber, 10);
 
-  if (isNaN(gameId)) {
+  if (isNaN(parsedGameNumber)) {
     notFound();
   }
 
-  const game = await getGameById(gameId);
+  const game = await getGameByGameNumber(parsedGameNumber);
 
   if (!game) {
     notFound();

@@ -626,7 +626,7 @@ export async function addGame(data: AddGameInput) {
 
     revalidatePath('/admin/games');
     revalidatePath('/games');
-    revalidatePath(`/games/${transactionGameId}`);
+    revalidatePath(`/games/${parsed.gameNumber}`);
     return { success: true };
   } catch (error) {
     console.error('Error adding game:', error);
@@ -725,7 +725,7 @@ export async function updateGame(gameId: number, data: AddGameInput) {
 
     revalidatePath('/admin/games');
     revalidatePath('/games');
-    revalidatePath(`/games/${gameId}`);
+    revalidatePath(`/games/${parsed.gameNumber}`);
     return { success: true };
   } catch (error) {
     console.error('Error updating game:', error);
@@ -741,17 +741,7 @@ export async function updateGame(gameId: number, data: AddGameInput) {
   }
 }
 
-export async function getGameNumber(gameId: number): Promise<number | null> {
-  if (!db) return null;
-  const result = await db
-    .select({ gameNumber: games.gameNumber })
-    .from(games)
-    .where(eq(games.id, gameId))
-    .limit(1);
-  return result[0]?.gameNumber ?? null;
-}
-
-export async function getGameById(gameId: number) {
+export async function getGameByGameNumber(gameNumber: number) {
   if (!db) return null;
 
   // Game basic info
@@ -778,10 +768,12 @@ export async function getGameById(gameId: number) {
       eq(games.initialCombinationId, initialCombinations.id),
     )
     .leftJoin(locations, eq(games.locationId, locations.id))
-    .where(eq(games.id, gameId))
+    .where(eq(games.gameNumber, gameNumber))
     .limit(1);
 
   if (!game[0]) return null;
+
+  const gameId = game[0].id;
 
   // Fetch game types
   const gameTypesData = await db

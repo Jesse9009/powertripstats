@@ -1,7 +1,7 @@
 import type { GameFormData } from '@/components/AddGameForm';
-import type { getGameById } from '@/app/actions';
+import type { getGameByGameNumber } from '@/app/actions';
 
-type GameData = NonNullable<Awaited<ReturnType<typeof getGameById>>>;
+type GameData = NonNullable<Awaited<ReturnType<typeof getGameByGameNumber>>>;
 
 /**
  * Converts a getGameById result into the AddGameForm's GameFormData shape.

@@ -124,7 +124,7 @@ export default async function GamesPage({ searchParams }: PageProps) {
                     <TableCell>{game.winner ? game.winner : '-'}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/games/${game.id}/edit`}>Edit</Link>
+                        <Link href={`/admin/games/${game.gameNumber}/edit`}>Edit</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
