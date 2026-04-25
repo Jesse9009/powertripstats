@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatFullName } from '@/lib/utils';
 import { getParticipants } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +64,7 @@ export default async function Home() {
                   <TableRow key={participant.id}>
                     <TableCell>{participant.id}</TableCell>
                     <TableCell>
-                      {participant.firstName} {participant.lastName}
+                      {formatFullName(participant.firstName, participant.middleName, participant.lastName)}
                     </TableCell>
                     <TableCell>{participant.nickname}</TableCell>
                   </TableRow>

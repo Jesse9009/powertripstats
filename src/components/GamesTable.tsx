@@ -13,13 +13,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
-import { formatGameDateUTC } from '@/lib/utils';
+import { formatFullName, formatGameDateUTC } from '@/lib/utils';
 
 type GameRow = {
   id: number;
   gameNumber: number;
   gameDate: Date | string;
   hostFirstName: string;
+  hostMiddleName: string | null;
   hostLastName: string;
   hostNickname: string | null;
   initialsCombination: string;
@@ -82,7 +83,7 @@ export function GamesTable({ games, page, totalPages }: GamesTableProps) {
                 <TableCell>{game.initialsCombination}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">
-                    {game.hostFirstName} {game.hostLastName}
+                    {formatFullName(game.hostFirstName, game.hostMiddleName, game.hostLastName)}
                     {game.hostNickname ? ` (${game.hostNickname})` : ''}
                   </Badge>
                 </TableCell>

@@ -1,3 +1,5 @@
+import { formatFullName } from '@/lib/utils';
+
 export interface Clue {
   id: number;
   number: number;
@@ -23,6 +25,7 @@ export interface ItemData {
 
 export interface PlayerLike {
   firstName: string;
+  middleName: string | null;
   lastName: string;
   nickname: string | null;
 }
@@ -36,7 +39,7 @@ export interface ItemState {
 }
 
 export function fullName(p: PlayerLike): string {
-  return `${p.firstName} ${p.lastName}`;
+  return formatFullName(p.firstName, p.middleName, p.lastName);
 }
 
 export function shortName(p: PlayerLike): string {

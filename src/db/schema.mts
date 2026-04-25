@@ -13,6 +13,7 @@ import {
 export const participants = sqliteTable("participants", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   firstName: text("first_name").notNull(),
+  middleName: text("middle_name"),
   lastName: text("last_name").notNull(),
   nickname: text("nickname"),
   imageUrl: text("image_url"),

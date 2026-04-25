@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn, formatFullName } from '@/lib/utils';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import {
   computeScores,
@@ -70,7 +70,7 @@ export function FinalStandings({ items, players }: FinalStandingsProps) {
               >
                 <CardContent className="p-4 flex flex-col items-center gap-1 text-center">
                   <span className="font-medium text-sm">
-                    {p.firstName} {p.lastName}
+                    {formatFullName(p.firstName, p.middleName, p.lastName)}
                   </span>
                   <span className={cn('text-xs text-muted-foreground', !p.nickname && 'invisible')}>
                     {p.nickname ? `“${p.nickname}”` : ' '}

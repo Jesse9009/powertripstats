@@ -23,6 +23,7 @@ import {
   sponsors,
 } from '@/db/schema.mts';
 import { asc, count, desc, eq, sql, and } from 'drizzle-orm';
+import { formatFullName } from '@/lib/utils';
 import { z } from 'zod';
 
 const db = getDb();
@@ -268,6 +269,7 @@ export async function getGames(limit: number = 20, offset: number = 0) {
       gameNumber: games.gameNumber,
       gameDate: games.gameDate,
       hostFirstName: participants.firstName,
+      hostMiddleName: participants.middleName,
       hostLastName: participants.lastName,
       hostNickname: participants.nickname,
       initialsCombination: initialCombinations.combination,
@@ -275,7 +277,10 @@ export async function getGames(limit: number = 20, offset: number = 0) {
         SELECT group_concat(player_name, ', ')
         FROM (
           SELECT
-            p.first_name || ' ' || p.last_name as player_name
+            CASE WHEN p.middle_name IS NOT NULL AND p.middle_name != ''
+              THEN p.first_name || ' ' || p.middle_name || ' ' || p.last_name
+              ELSE p.first_name || ' ' || p.last_name
+            END as player_name
           FROM game_players gp
           INNER JOIN participants p
             ON p.id = gp.player_id
@@ -300,10 +305,15 @@ export async function getGames(limit: number = 20, offset: number = 0) {
            FROM player_scores
          ),
          winners AS (
-           SELECT 
-             ${participants.firstName} || ' ' || ${participants.lastName} ||
-             CASE 
-               WHEN ${participants.nickname} IS NOT NULL 
+           SELECT
+             ${participants.firstName} ||
+             CASE WHEN ${participants.middleName} IS NOT NULL AND ${participants.middleName} != ''
+               THEN ' ' || ${participants.middleName}
+               ELSE ''
+             END ||
+             ' ' || ${participants.lastName} ||
+             CASE
+               WHEN ${participants.nickname} IS NOT NULL
                THEN ' (' || ${participants.nickname} || ')'
                ELSE ''
              END as winner_name
@@ -359,6 +369,7 @@ export async function getGameFormOptions() {
       .select({
         id: participants.id,
         firstName: participants.firstName,
+        middleName: participants.middleName,
         lastName: participants.lastName,
         nickname: participants.nickname,
       })
@@ -393,6 +404,7 @@ export async function getGameFormOptions() {
 
 export async function addParticipant(data: {
   firstName: string;
+  middleName?: string;
   lastName: string;
   nickname?: string;
   imageUrl?: string;
@@ -400,6 +412,7 @@ export async function addParticipant(data: {
   try {
     await db?.insert(participants).values({
       firstName: data.firstName,
+      middleName: data.middleName || null,
       lastName: data.lastName,
       nickname: data.nickname || null,
       imageUrl: data.imageUrl || null,
@@ -753,6 +766,7 @@ export async function getGameByGameNumber(gameNumber: number) {
       notes: games.notes,
       hostParticipantId: games.hostParticipantId,
       hostFirstName: participants.firstName,
+      hostMiddleName: participants.middleName,
       hostLastName: participants.lastName,
       hostNickname: participants.nickname,
       initialsCombination: initialCombinations.combination,
@@ -786,6 +800,7 @@ export async function getGameByGameNumber(gameNumber: number) {
     .select({
       playerId: gamePlayers.playerId,
       firstName: participants.firstName,
+      middleName: participants.middleName,
       lastName: participants.lastName,
       nickname: participants.nickname,
       sponsorId: gamePlayerSponsors.sponsorId,
@@ -810,6 +825,7 @@ export async function getGameByGameNumber(gameNumber: number) {
       prize: gamePrizes.prize,
       beneficiaryId: playerPrizeBeneficiaries.playerId,
       beneficiaryFirstName: participants.firstName,
+      beneficiaryMiddleName: participants.middleName,
       beneficiaryLastName: participants.lastName,
       beneficiaryName: playerPrizeBeneficiaries.beneficiaryName,
       pickOrder: playerPrizeBeneficiaries.pickOrder,
@@ -841,6 +857,7 @@ export async function getGameByGameNumber(gameNumber: number) {
       guessId: gameItemGuesses.id,
       guessPlayerId: gameItemGuesses.playerId,
       guessPlayerFirstName: participants.firstName,
+      guessPlayerMiddleName: participants.middleName,
       guessPlayerLastName: participants.lastName,
       guessText: gameItemGuesses.guess,
       isCorrect: gameItemGuesses.isCorrect,
@@ -897,6 +914,7 @@ export async function getGameByGameNumber(gameNumber: number) {
     number,
     {
       firstName: string;
+      middleName: string | null;
       lastName: string;
       nickname: string | null;
       sponsors: string[];
@@ -907,6 +925,7 @@ export async function getGameByGameNumber(gameNumber: number) {
     if (!players.has(p.playerId)) {
       players.set(p.playerId, {
         firstName: p.firstName,
+        middleName: p.middleName,
         lastName: p.lastName,
         nickname: p.nickname,
         sponsors: [],
@@ -946,7 +965,7 @@ export async function getGameByGameNumber(gameNumber: number) {
     ) {
       prizes.get(p.prizeId)!.beneficiaries.push({
         playerId: p.beneficiaryId,
-        name: `${p.beneficiaryFirstName} ${p.beneficiaryLastName}`,
+        name: formatFullName(p.beneficiaryFirstName, p.beneficiaryMiddleName, p.beneficiaryLastName),
         beneficiaryName: p.beneficiaryName ?? '',
         pickOrder: p.pickOrder,
       });
@@ -1013,7 +1032,7 @@ export async function getGameByGameNumber(gameNumber: number) {
     ) {
       items.get(i.itemId)!.guesses.push({
         playerId: i.guessPlayerId,
-        playerName: `${i.guessPlayerFirstName || ''} ${i.guessPlayerLastName || ''}`,
+        playerName: formatFullName(i.guessPlayerFirstName || '', i.guessPlayerMiddleName, i.guessPlayerLastName || ''),
         guess: i.guessText,
         clueHeard: i.guessClueHeard,
         isCorrect: i.isCorrect,
