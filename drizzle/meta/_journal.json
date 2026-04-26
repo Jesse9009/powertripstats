@@ -1,76 +1,83 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1744214400000,
-      "tag": "0000_fancy_princess_powerful",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1775836737930,
-      "tag": "0001_premium_gressill",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1775854276837,
-      "tag": "0002_sad_hammerhead",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1776163200000,
-      "tag": "0003_flaky_madrox",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1776364919226,
-      "tag": "0004_right_firestar",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1776451697037,
-      "tag": "0005_wise_sharon_carter",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1776973962787,
-      "tag": "0006_free_venus",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1777044485416,
-      "tag": "0007_sour_supreme_intelligence",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1777118651768,
-      "tag": "0008_romantic_maggott",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "6",
-      "when": 1777119289686,
-      "tag": "0009_nice_microchip",
-      "breakpoints": true
-    }
-  ]
+    "version": "7",
+    "dialect": "sqlite",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "6",
+            "when": 1744214400000,
+            "tag": "0000_fancy_princess_powerful",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1775836737930,
+            "tag": "0001_premium_gressill",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1775854276837,
+            "tag": "0002_sad_hammerhead",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "6",
+            "when": 1776163200000,
+            "tag": "0003_flaky_madrox",
+            "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "6",
+            "when": 1776364919226,
+            "tag": "0004_right_firestar",
+            "breakpoints": true
+        },
+        {
+            "idx": 5,
+            "version": "6",
+            "when": 1776451697037,
+            "tag": "0005_wise_sharon_carter",
+            "breakpoints": true
+        },
+        {
+            "idx": 6,
+            "version": "6",
+            "when": 1776973962787,
+            "tag": "0006_free_venus",
+            "breakpoints": true
+        },
+        {
+            "idx": 7,
+            "version": "6",
+            "when": 1777044485416,
+            "tag": "0007_sour_supreme_intelligence",
+            "breakpoints": true
+        },
+        {
+            "idx": 8,
+            "version": "6",
+            "when": 1777118651768,
+            "tag": "0008_romantic_maggott",
+            "breakpoints": true
+        },
+        {
+            "idx": 9,
+            "version": "6",
+            "when": 1777119289686,
+            "tag": "0009_nice_microchip",
+            "breakpoints": true
+        },
+        {
+            "idx": 11,
+            "version": "6",
+            "when": 1777225981202,
+            "tag": "0011_pink_kinsey_walden",
+            "breakpoints": true
+        }
+    ]
 }

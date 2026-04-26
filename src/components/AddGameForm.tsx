@@ -275,6 +275,21 @@ interface AddGameFormProps {
   defaultValues?: GameFormData;
 }
 
+const DRAFT_KEY = 'powertripstats-add-game-draft';
+
+function loadDraft(): GameFormData | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as GameFormData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
 function createDefaultValues(): GameFormData {
   return {
     gameNumber: 1,
@@ -934,6 +949,8 @@ export function AddGameForm({
     number | null
   >(null);
 
+  const isCreateMode = !defaultValues;
+
   const schema = useMemo(() => createSchema(gameTypes), [gameTypes]);
 
   const {
@@ -943,10 +960,11 @@ export function AddGameForm({
     setValue,
     getValues,
     reset,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<GameFormData>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues ?? createDefaultValues(),
+    defaultValues: isCreateMode ? (loadDraft() ?? createDefaultValues()) : defaultValues,
   });
 
   // Warn about unsaved changes when navigating away
@@ -958,6 +976,22 @@ export function AddGameForm({
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
+
+  // Persist draft to localStorage in create mode
+  useEffect(() => {
+    if (!isCreateMode) return;
+    const subscription = watch((values) => {
+      const id = setTimeout(() => {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+        } catch {
+          // quota exceeded or SSR — ignore
+        }
+      }, 500);
+      return () => clearTimeout(id);
+    });
+    return () => subscription.unsubscribe();
+  }, [isCreateMode, watch]);
 
   const itemArray = useFieldArray({ control, name: 'items' });
   const prizeArray = useFieldArray({ control, name: 'prizes' });
@@ -1141,6 +1175,7 @@ export function AddGameForm({
       if (mode === 'edit') {
         router.push('/admin/games');
       } else {
+        clearDraft();
         reset(createDefaultValues());
         router.refresh();
       }
@@ -1696,6 +1731,19 @@ export function AddGameForm({
                 disabled={isSubmitting}
               >
                 Cancel
+              </Button>
+            )}
+            {isCreateMode && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => {
+                  clearDraft();
+                  reset(createDefaultValues());
+                }}
+              >
+                Clear Draft
               </Button>
             )}
             <Button type="submit" className={mode === 'edit' ? 'flex-1' : 'w-full'} disabled={isSubmitting}>

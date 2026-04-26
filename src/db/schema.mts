@@ -237,6 +237,8 @@ export const user = sqliteTable("user", {
   banned: integer("banned", { mode: "boolean" }),
   banReason: text("banReason"),
   banExpires: integer("banExpires", { mode: "timestamp_ms" }),
+  username: text("username").unique(),
+  displayUsername: text("displayUsername"),
 });
 
 export const session = sqliteTable("session", {

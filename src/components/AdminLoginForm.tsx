@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
 const schema = z.object({
-  email: z.string().email("Invalid email address"),
+  identifier: z.string().min(1, "Email or username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -29,10 +29,17 @@ export function AdminLoginForm() {
   });
 
   async function onSubmit(data: LoginFormData) {
-    const { error } = await authClient.signIn.email({
-      email: data.email,
-      password: data.password,
-    });
+    const isEmail = data.identifier.includes("@");
+
+    const { error } = isEmail
+      ? await authClient.signIn.email({
+          email: data.identifier,
+          password: data.password,
+        })
+      : await authClient.signIn.username({
+          username: data.identifier,
+          password: data.password,
+        });
 
     if (error) {
       toast.error(error.message ?? "Login failed");
@@ -47,13 +54,13 @@ export function AdminLoginForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
         <Input
-          type="email"
-          placeholder="Email"
-          autoComplete="email"
-          {...register("email")}
+          type="text"
+          placeholder="Email or username"
+          autoComplete="username"
+          {...register("identifier")}
         />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+        {errors.identifier && (
+          <p className="text-sm text-destructive">{errors.identifier.message}</p>
         )}
       </div>
 

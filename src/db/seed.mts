@@ -5,9 +5,10 @@ import { user } from './schema.mjs';
 
 const email = process.env.ADMIN_EMAIL;
 const password = process.env.ADMIN_PASSWORD;
+const adminUsername = process.env.ADMIN_USERNAME;
 
 if (!email || !password) {
-  console.error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env.local');
+  console.error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
   process.exit(1);
 }
 
@@ -26,7 +27,12 @@ const db = assertDb();
     );
   } else {
     const result = await getAuth().api.signUpEmail({
-      body: { email, password, name: 'Admin' },
+      body: {
+        email,
+        password,
+        name: 'Admin',
+        ...(adminUsername ? { username: adminUsername } : {}),
+      },
     });
 
     if (!result?.user?.id) {
