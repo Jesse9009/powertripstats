@@ -49,8 +49,7 @@ function resolveParticipant(name: string, participants: Participant[]): number |
       p.firstName.toLowerCase() === lower ||
       p.lastName.toLowerCase() === lower ||
       p.nickname?.toLowerCase() === lower ||
-      `${p.firstName} ${p.lastName}`.toLowerCase() === lower ||
-      (p.nickname && `${p.nickname}`.toLowerCase() === lower),
+      `${p.firstName} ${p.lastName}`.toLowerCase() === lower,
   );
   return match?.id ?? null;
 }
@@ -100,7 +99,7 @@ export async function extractGameData(
   const participantList = participants
     .map(
       (p) =>
-        `  ${p.firstName}${p.middleName ? ` ${p.middleName}` : ''} ${p.lastName}${p.nickname ? ` (${p.nickname})` : ''}`,
+        `${p.firstName} ${p.lastName}${p.nickname ? ` (${p.nickname})` : ''}`,
     )
     .join('\n');
 
@@ -133,7 +132,7 @@ export async function extractGameData(
   try {
     raw = JSON.parse(textBlock.text) as ClaudeOutput;
   } catch {
-    throw new Error(`Claude returned invalid JSON: ${textBlock.text.slice(0, 300)}`);
+    throw new Error(`Claude returned invalid JSON: ${textBlock.text.slice(0, 1000)}`);
   }
 
   const uncertainFields = [...(raw.uncertainFields ?? [])];
@@ -175,8 +174,8 @@ export async function extractGameData(
       return {
         gameItemTypeId: gameItemTypeId ?? 1,
         fallbackAnswer: item.fallbackAnswer,
-        clues: item.clues,
-        guesses: item.guesses.map((guess, guessIndex) => {
+        clues: item.clues ?? [],
+        guesses: (item.guesses ?? []).map((guess, guessIndex) => {
           const playerId = resolveParticipant(guess.playerName, participants);
           if (playerId === null) {
             uncertainFields.push(`items.${itemIndex}.guesses.${guessIndex}.playerId`);
