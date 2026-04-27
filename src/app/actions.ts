@@ -1068,7 +1068,7 @@ export async function startTranscription(audioUrl: string): Promise<{ jobId: str
 export async function pollTranscription(jobId: string): Promise<PollResult> {
   const result = await getTranscriptStatus(jobId);
 
-  if (result.status === 'queued' || result.status === 'processing') {
+  if (result.status !== 'completed' && result.status !== 'error') {
     return { status: 'pending' };
   }
 
@@ -1076,11 +1076,7 @@ export async function pollTranscription(jobId: string): Promise<PollResult> {
     return { status: 'error', message: result.error };
   }
 
-  // result.status === 'completed' at this point, so result has text property
-  if (result.status !== 'completed') {
-    return { status: 'error', message: 'Unexpected transcription status' };
-  }
-
+  // result.status is now guaranteed to be 'completed'
   const db = getDb();
   if (!db) return { status: 'error', message: 'Database not configured' };
 
