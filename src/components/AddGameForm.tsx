@@ -265,6 +265,8 @@ type LocationOption = {
   name: string;
 };
 
+type TranscribeState = 'idle' | 'queued' | 'processing' | 'error';
+
 interface AddGameFormProps {
   participants: ParticipantOption[];
   gameTypes: GameTypeOption[];
@@ -963,7 +965,6 @@ export function AddGameForm({
     number | null
   >(null);
 
-  type TranscribeState = 'idle' | 'queued' | 'processing' | 'error';
   const [transcribeState, setTranscribeState] = useState<TranscribeState>('idle');
   const [transcribeJobId, setTranscribeJobId] = useState<string | null>(null);
   const [transcribeError, setTranscribeError] = useState<string | null>(null);
@@ -1205,7 +1206,9 @@ export function AddGameForm({
     }, 5000);
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // applyExtraction is omitted — it captures itemArray and setValue which are stable
+    // react-hook-form references; wrapping in useCallback would not change behavior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcribeJobId, transcribeState]);
 
   const uncertainCls = (path: string) =>
