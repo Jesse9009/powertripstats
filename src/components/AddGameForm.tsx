@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -15,8 +15,9 @@ import {
 import { z } from 'zod';
 import { toast } from 'sonner';
 
-import { addGame, updateGame } from '@/app/actions';
-import { formatFullName } from '@/lib/utils';
+import { addGame, pollTranscription, startTranscription, updateGame } from '@/app/actions';
+import type { ExtractionResult } from '@/lib/transcription/types';
+import { cn, formatFullName } from '@/lib/utils';
 import {
   SearchableCombobox,
   SearchableMultiCombobox,
@@ -341,6 +342,7 @@ interface GameItemFieldsProps {
   register: ReturnType<typeof useForm<GameFormData>>['register'];
   setValue: ReturnType<typeof useForm<GameFormData>>['setValue'];
   errors: ReturnType<typeof useForm<GameFormData>>['formState']['errors'];
+  uncertainFields: Set<string>;
 }
 
 function GameItemFields({
@@ -353,7 +355,11 @@ function GameItemFields({
   register,
   setValue,
   errors,
+  uncertainFields,
 }: GameItemFieldsProps) {
+  const uncertainCls = (path: string) =>
+    uncertainFields.has(path) ? 'ring-2 ring-amber-500 ring-offset-1' : '';
+
   const [isItemRemoveDialogOpen, setIsItemRemoveDialogOpen] = useState(false);
   const [clueToRemoveIndex, setClueToRemoveIndex] = useState<number | null>(
     null,
@@ -433,7 +439,10 @@ function GameItemFields({
           </label>
           <select
             id={`items.${itemIndex}.gameItemTypeId`}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            className={cn(
+              'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm',
+              uncertainCls(`items.${itemIndex}.gameItemTypeId`),
+            )}
             {...register(`items.${itemIndex}.gameItemTypeId`, {
               valueAsNumber: true,
             })}
@@ -473,6 +482,7 @@ function GameItemFields({
               <Input
                 id={`items.${itemIndex}.clues.${clueIndex}.clue`}
                 autoComplete="off"
+                className={uncertainCls(`items.${itemIndex}.clues.${clueIndex}.clue`)}
                 {...register(`items.${itemIndex}.clues.${clueIndex}.clue`)}
               />
               {errors.items?.[itemIndex]?.clues?.[clueIndex]?.clue && (
@@ -547,12 +557,14 @@ function GameItemFields({
                 control={control}
                 name={`items.${itemIndex}.guesses.${guessIndex}.playerId`}
                 render={({ field }) => (
-                  <SearchableCombobox
-                    value={field.value}
-                    onChange={field.onChange}
-                    options={playerOptions}
-                    placeholder="Select player"
-                  />
+                  <div className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.playerId`)}>
+                    <SearchableCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={playerOptions}
+                      placeholder="Select player"
+                    />
+                  </div>
                 )}
               />
               {errors.items?.[itemIndex]?.guesses?.[guessIndex]?.playerId && (
@@ -574,6 +586,7 @@ function GameItemFields({
               </label>
               <Input
                 id={`items.${itemIndex}.guesses.${guessIndex}.guess`}
+                className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.guess`)}
                 {...register(`items.${itemIndex}.guesses.${guessIndex}.guess`)}
               />
             </div>
@@ -587,6 +600,7 @@ function GameItemFields({
               </label>
               <Input
                 id={`items.${itemIndex}.guesses.${guessIndex}.clueHeard`}
+                className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.clueHeard`)}
                 {...register(`items.${itemIndex}.guesses.${guessIndex}.clueHeard`)}
                 placeholder="Leave blank if full clue was heard"
               />
@@ -949,6 +963,14 @@ export function AddGameForm({
     number | null
   >(null);
 
+  type TranscribeState = 'idle' | 'queued' | 'processing' | 'error';
+  const [transcribeState, setTranscribeState] = useState<TranscribeState>('idle');
+  const [transcribeJobId, setTranscribeJobId] = useState<string | null>(null);
+  const [transcribeError, setTranscribeError] = useState<string | null>(null);
+  const [transcribeElapsed, setTranscribeElapsed] = useState(0);
+  const [uncertainFields, setUncertainFields] = useState<Set<string>>(new Set());
+  const [rawTranscript, setRawTranscript] = useState<string | null>(null);
+
   const isCreateMode = !defaultValues;
 
   const schema = useMemo(() => createSchema(gameTypes), [gameTypes]);
@@ -1004,6 +1026,7 @@ export function AddGameForm({
   const hostParticipantId = useWatch({ control, name: 'hostParticipantId' });
   const watchedPlayerIds = useWatch({ control, name: 'playerIds' });
   const watchedGameTypeIds = useWatch({ control, name: 'gameTypeIds' });
+  const watchedAudioUrl = useWatch({ control, name: 'audioUrl' });
 
   const selectedSponsorIds = useMemo(
     () => watchedSponsorIds ?? [],
@@ -1100,6 +1123,93 @@ export function AddGameForm({
       { shouldValidate: true },
     );
   };
+
+  function applyExtraction(extraction: ExtractionResult) {
+    setUncertainFields(new Set(extraction.uncertainFields));
+    setRawTranscript(extraction.rawTranscript);
+    const { data } = extraction;
+
+    if (data.gameNumber !== undefined) setValue('gameNumber', data.gameNumber);
+    if (data.hostParticipantId !== undefined) setValue('hostParticipantId', data.hostParticipantId);
+    if (data.playerIds !== undefined) setValue('playerIds', data.playerIds);
+    if (data.items !== undefined) {
+      itemArray.replace(
+        data.items.map((item) => ({
+          gameItemTypeId: item.gameItemTypeId,
+          fallbackAnswer: item.fallbackAnswer ?? '',
+          clues: item.clues,
+          guesses: item.guesses.map((g) => ({
+            playerId: g.playerId,
+            guess: g.guess ?? '',
+            clueHeard: g.clueHeard ?? '',
+            isIncorrect: g.isIncorrect,
+            clueNumber: g.clueNumber,
+          })),
+        })),
+      );
+    }
+    if (data.includeJackpot !== undefined) setValue('includeJackpot', data.includeJackpot);
+    if (data.jackpot) {
+      if (data.jackpot.oneCorrect !== undefined) setValue('jackpot.oneCorrect', data.jackpot.oneCorrect);
+      if (data.jackpot.bothCorrect !== undefined) setValue('jackpot.bothCorrect', data.jackpot.bothCorrect);
+      if (data.jackpot.callerName !== undefined) setValue('jackpot.callerName', data.jackpot.callerName);
+      if (data.jackpot.callerGuessInitialsCombination !== undefined) {
+        setValue('jackpot.callerGuessInitialsCombination', data.jackpot.callerGuessInitialsCombination);
+      }
+    }
+  }
+
+  const handleTranscribe = async () => {
+    const audioUrl = getValues('audioUrl');
+    if (!audioUrl) return;
+    setTranscribeState('queued');
+    setTranscribeJobId(null);
+    setTranscribeError(null);
+    setTranscribeElapsed(0);
+    try {
+      const { jobId } = await startTranscription(audioUrl);
+      setTranscribeJobId(jobId);
+      setTranscribeState('processing');
+    } catch (err) {
+      setTranscribeState('error');
+      setTranscribeError(err instanceof Error ? err.message : 'Failed to start transcription');
+    }
+  };
+
+  useEffect(() => {
+    if (!transcribeJobId || (transcribeState !== 'queued' && transcribeState !== 'processing')) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      setTranscribeElapsed((s) => s + 5);
+      try {
+        const result = await pollTranscription(transcribeJobId);
+        if (result.status === 'pending') return;
+
+        clearInterval(interval);
+        if (result.status === 'error') {
+          setTranscribeState('error');
+          setTranscribeError(result.message);
+          return;
+        }
+
+        applyExtraction(result.extraction);
+        setTranscribeState('idle');
+        toast.success('Transcript applied! Review highlighted fields.');
+      } catch (err) {
+        clearInterval(interval);
+        setTranscribeState('error');
+        setTranscribeError(err instanceof Error ? err.message : 'Polling failed');
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcribeJobId, transcribeState]);
+
+  const uncertainCls = (path: string) =>
+    uncertainFields.has(path) ? 'ring-2 ring-amber-500 ring-offset-1' : '';
 
   const onError = (errors: FieldErrors<GameFormData>) => {
     console.error('Validation errors:', errors);
@@ -1208,6 +1318,10 @@ export function AddGameForm({
                   id="gameNumber"
                   type="number"
                   min={1}
+                  className={cn(
+                    'w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm',
+                    uncertainCls('gameNumber'),
+                  )}
                   {...register('gameNumber', { valueAsNumber: true })}
                 />
                 {errors.gameNumber && (
@@ -1235,12 +1349,14 @@ export function AddGameForm({
                   control={control}
                   name="hostParticipantId"
                   render={({ field }) => (
-                    <SearchableCombobox
-                      value={field.value}
-                      onChange={field.onChange}
-                      options={participantOptions}
-                      placeholder="Select host"
-                    />
+                    <div className={uncertainCls('hostParticipantId')}>
+                      <SearchableCombobox
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={participantOptions}
+                        placeholder="Select host"
+                      />
+                    </div>
                   )}
                 />
                 {errors.hostParticipantId && (
@@ -1328,13 +1444,15 @@ export function AddGameForm({
                 control={control}
                 name="playerIds"
                 render={({ field }) => (
-                  <SearchableMultiCombobox
-                    values={field.value}
-                    valueType="player"
-                    onChange={field.onChange}
-                    options={playerPoolOptions}
-                    placeholder="Select active players"
-                  />
+                  <div className={uncertainCls('playerIds')}>
+                    <SearchableMultiCombobox
+                      values={field.value}
+                      valueType="player"
+                      onChange={field.onChange}
+                      options={playerPoolOptions}
+                      placeholder="Select active players"
+                    />
+                  </div>
                 )}
               />
               <p className="text-xs text-muted-foreground">
@@ -1369,17 +1487,47 @@ export function AddGameForm({
                 <label htmlFor="audioUrl" className="text-sm font-medium">
                   Audio Embed URL (optional)
                 </label>
-                <input
-                  id="audioUrl"
-                  type="url"
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                  placeholder="https://..."
-                  {...register('audioUrl')}
-                />
+                <div className="flex gap-2">
+                  <input
+                    id="audioUrl"
+                    type="url"
+                    className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    placeholder="https://..."
+                    {...register('audioUrl')}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={
+                      !watchedAudioUrl ||
+                      transcribeState === 'queued' ||
+                      transcribeState === 'processing'
+                    }
+                    onClick={handleTranscribe}
+                  >
+                    {transcribeState === 'queued' || transcribeState === 'processing' ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Transcribing… ({transcribeElapsed}s)
+                      </>
+                    ) : (
+                      'Transcribe & Fill'
+                    )}
+                  </Button>
+                </div>
+                {transcribeState === 'error' && (
+                  <div className="flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{transcribeError}</span>
+                    <button type="button" className="underline" onClick={handleTranscribe}>
+                      Retry
+                    </button>
+                  </div>
+                )}
                 {errors.audioUrl && (
-                  <p className="text-xs text-destructive">
-                    {errors.audioUrl.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.audioUrl.message}</p>
                 )}
               </div>
             </div>
@@ -1550,6 +1698,7 @@ export function AddGameForm({
                     id="jackpot.oneCorrect"
                     type="number"
                     min={0}
+                    className={uncertainCls('jackpot.oneCorrect')}
                     {...register('jackpot.oneCorrect', { valueAsNumber: true })}
                   />
                 </div>
@@ -1565,6 +1714,7 @@ export function AddGameForm({
                     id="jackpot.bothCorrect"
                     type="number"
                     min={0}
+                    className={uncertainCls('jackpot.bothCorrect')}
                     {...register('jackpot.bothCorrect', {
                       valueAsNumber: true,
                     })}
@@ -1580,6 +1730,7 @@ export function AddGameForm({
                   </label>
                   <Input
                     id="jackpot.callerName"
+                    className={uncertainCls('jackpot.callerName')}
                     {...register('jackpot.callerName')}
                   />
                 </div>
@@ -1593,6 +1744,7 @@ export function AddGameForm({
                   </label>
                   <Input
                     id="jackpot.callerGuessInitialsCombination"
+                    className={uncertainCls('jackpot.callerGuessInitialsCombination')}
                     {...register('jackpot.callerGuessInitialsCombination')}
                   />
                 </div>
@@ -1627,6 +1779,7 @@ export function AddGameForm({
                   register={register}
                   setValue={setValue}
                   errors={errors}
+                  uncertainFields={uncertainFields}
                 />
               ))}
             </div>
@@ -1714,6 +1867,15 @@ export function AddGameForm({
               </div>
             )}
           </section>
+
+          {rawTranscript && (
+            <details className="rounded-lg border p-3 text-sm">
+              <summary className="cursor-pointer font-medium">Raw Transcript</summary>
+              <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                {rawTranscript}
+              </pre>
+            </details>
+          )}
 
           {serverError && (
             <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
