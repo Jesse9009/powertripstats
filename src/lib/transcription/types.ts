@@ -1,5 +1,3 @@
-export type TranscriptStatus = 'queued' | 'processing' | 'completed' | 'error';
-
 export type ExtractedGameData = {
   gameNumber?: number;
   hostParticipantId?: number;

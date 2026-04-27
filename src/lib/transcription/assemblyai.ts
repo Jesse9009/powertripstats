@@ -32,5 +32,5 @@ export async function getTranscriptStatus(jobId: string): Promise<TranscriptResu
     return { status: 'error', error: transcript.error ?? 'Transcription failed' };
   }
 
-  return { status: transcript.status as 'queued' | 'processing' };
+  return { status: transcript.status };
 }
