@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache';
 
 import { assertDb, getDb } from '@/db/client.mts';
+import { submitTranscription, getTranscriptStatus } from '@/lib/transcription/assemblyai';
+import { extractGameData } from '@/lib/transcription/extract';
+import type { PollResult } from '@/lib/transcription/types';
 import {
   gameGameTypes,
   gameItemClues,
@@ -1056,4 +1059,48 @@ export async function getGameByGameNumber(gameNumber: number) {
     gameSponsors: gameSponsorsData.map((s) => s.sponsorName),
     gameSponsorIds: gameSponsorsData.map((s) => s.sponsorId),
   };
+}
+
+export async function startTranscription(audioUrl: string): Promise<{ jobId: string }> {
+  return submitTranscription(audioUrl);
+}
+
+export async function pollTranscription(jobId: string): Promise<PollResult> {
+  const result = await getTranscriptStatus(jobId);
+
+  if (result.status === 'queued' || result.status === 'processing') {
+    return { status: 'pending' };
+  }
+
+  if (result.status === 'error') {
+    return { status: 'error', message: result.error };
+  }
+
+  // result.status === 'completed' at this point, so result has text property
+  if (result.status !== 'completed') {
+    return { status: 'error', message: 'Unexpected transcription status' };
+  }
+
+  const db = getDb();
+  if (!db) return { status: 'error', message: 'Database not configured' };
+
+  const [participantRows, itemTypeRows] = await Promise.all([
+    db
+      .select({
+        id: participants.id,
+        firstName: participants.firstName,
+        middleName: participants.middleName,
+        lastName: participants.lastName,
+        nickname: participants.nickname,
+      })
+      .from(participants),
+    db.select({ id: gameItemTypes.id, type: gameItemTypes.type }).from(gameItemTypes),
+  ]);
+
+  try {
+    const extraction = await extractGameData(result.text, participantRows, itemTypeRows);
+    return { status: 'completed', extraction };
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : 'Extraction failed' };
+  }
 }
