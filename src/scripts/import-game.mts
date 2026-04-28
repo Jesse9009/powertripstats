@@ -112,14 +112,75 @@ const GAME_DATA: ImportGameData = {
         { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
       ],
     },
-    // Add 9 more items (minimum 10 required)
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
+    {
+      gameItemType: 'regulation',
+      clues: [{ clue: 'Replace with real clue', isCompleted: true }],
+      guesses: [
+        { playerName: 'AJ Mansour', guess: 'Replace with answer', isCorrect: true },
+      ],
+    },
   ],
 };
 
 // ─── Name resolution ────────────────────────────────────────────────────────
 
-async function resolveNames(data: ImportGameData): Promise<AddGameInput> {
-  const db = assertDb();
+async function resolveNames(db: ReturnType<typeof assertDb>, data: ImportGameData): Promise<AddGameInput> {
   const errors: string[] = [];
 
   const [allParticipants, allLocations, allGameTypes, allGameItemTypes, allSponsors] =
@@ -288,9 +349,10 @@ async function main() {
 
   // Step 2: Resolve names to DB IDs
   console.log('Resolving names to IDs...');
+  const db = assertDb();
   let resolved: AddGameInput;
   try {
-    resolved = await resolveNames(parseResult.data);
+    resolved = await resolveNames(db, parseResult.data);
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));
     process.exit(1);
@@ -316,7 +378,6 @@ async function main() {
 
   // Step 4: Insert into DB (transaction without revalidatePath)
   console.log(`\nInserting game #${finalResult.data.gameNumber}...`);
-  const db = assertDb();
 
   await db.transaction(async (tx) => {
     const initialsCombinationId = await findOrCreateInitialCombinationId(
