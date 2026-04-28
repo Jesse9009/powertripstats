@@ -23,3 +23,7 @@ export function formatGameDateUTC(date: Date | number | string): string {
 
   return `${month}/${day}/${year}`;
 }
+
+export function uniqueNumbers(values: number[]) {
+  return Array.from(new Set(values));
+}

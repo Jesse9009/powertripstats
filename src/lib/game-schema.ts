@@ -1,4 +1,7 @@
+// Schema lives here because 'use server' files can only export async functions — non-function exports like Zod schemas are forbidden by Next.js.
+
 import { z } from 'zod';
+import { uniqueNumbers } from '@/lib/utils';
 
 export const idSchema = z.number().int().positive();
 
@@ -185,7 +188,3 @@ export const addGameSchema = z
   });
 
 export type AddGameInput = z.infer<typeof addGameSchema>;
-
-function uniqueNumbers(values: number[]) {
-  return Array.from(new Set(values));
-}

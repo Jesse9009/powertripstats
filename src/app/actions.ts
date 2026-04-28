@@ -26,7 +26,7 @@ import {
   sponsors,
 } from '@/db/schema.mts';
 import { asc, count, desc, eq, sql, and } from 'drizzle-orm';
-import { formatFullName } from '@/lib/utils';
+import { formatFullName, uniqueNumbers } from '@/lib/utils';
 import { z } from 'zod';
 import { addGameSchema, type AddGameInput } from '@/lib/game-schema';
 
@@ -35,10 +35,6 @@ const db = getDb();
 type DbTransaction = Parameters<
   Parameters<ReturnType<typeof assertDb>['transaction']>[0]
 >[0];
-
-function uniqueNumbers(values: number[]) {
-  return Array.from(new Set(values));
-}
 
 export async function findOrCreateInitialCombinationId(
   tx: DbTransaction,
