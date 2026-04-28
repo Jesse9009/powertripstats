@@ -33,7 +33,7 @@ const db = getDb();
 
 const idSchema = z.number().int().positive();
 
-const addGameSchema = z
+export const addGameSchema = z
   .object({
     gameNumber: z.number().int().min(1),
     gameDate: z.string().min(1),
@@ -225,7 +225,7 @@ function uniqueNumbers(values: number[]) {
   return Array.from(new Set(values));
 }
 
-async function findOrCreateInitialCombinationId(
+export async function findOrCreateInitialCombinationId(
   tx: DbTransaction,
   combination: string,
 ) {
@@ -427,7 +427,7 @@ export async function addParticipant(data: {
   }
 }
 
-async function insertGameChildren(
+export async function insertGameChildren(
   tx: DbTransaction,
   gameId: number,
   parsed: AddGameInput,
