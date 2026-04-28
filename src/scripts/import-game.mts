@@ -204,7 +204,7 @@ async function resolveNames(db: ReturnType<typeof assertDb>, data: ImportGameDat
 
   function findParticipant(name: string): number {
     const normalized = name.toLowerCase().trim();
-    const match = allParticipants.find((p) => {
+    const matches = allParticipants.filter((p) => {
       const full = [p.firstName, p.middleName, p.lastName]
         .filter(Boolean)
         .join(' ')
@@ -216,11 +216,15 @@ async function resolveNames(db: ReturnType<typeof assertDb>, data: ImportGameDat
         p.nickname?.toLowerCase() === normalized
       );
     });
-    if (!match) {
+    if (matches.length === 0) {
       errors.push(`Participant not found: "${name}"`);
       return 0;
     }
-    return match.id;
+    if (matches.length > 1) {
+      errors.push(`Participant name is ambiguous: "${name}" matches ${matches.map(p => `${p.firstName} ${p.lastName} (id=${p.id})`).join(', ')}`);
+      return 0;
+    }
+    return matches[0].id;
   }
 
   function findLocation(name: string): number {
@@ -311,8 +315,9 @@ async function resolveNames(db: ReturnType<typeof assertDb>, data: ImportGameDat
   };
 
   if (errors.length > 0) {
+    const uniqueErrors = [...new Set(errors)];
     throw new Error(
-      `Name resolution failed:\n${errors.map((e) => `  - ${e}`).join('\n')}`,
+      `Name resolution failed:\n${uniqueErrors.map((e) => `  - ${e}`).join('\n')}`,
     );
   }
 
@@ -327,8 +332,12 @@ async function main() {
   const dryRun = args.includes('--dry-run');
 
   let rawData: unknown;
-  if (fileIdx !== -1 && args[fileIdx + 1]) {
+  if (fileIdx !== -1) {
     const filePath = args[fileIdx + 1];
+    if (!filePath || filePath.startsWith('--')) {
+      console.error('Error: --file requires a path argument');
+      process.exit(1);
+    }
     rawData = JSON.parse(readFileSync(filePath, 'utf-8'));
     console.log(`Loading game data from: ${filePath}`);
   } else {
