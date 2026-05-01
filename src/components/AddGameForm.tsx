@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -15,8 +15,7 @@ import {
 import { z } from 'zod';
 import { toast } from 'sonner';
 
-import { addGame, pollTranscription, startTranscription, updateGame } from '@/app/actions';
-import type { ExtractionResult } from '@/lib/transcription/types';
+import { addGame, updateGame } from '@/app/actions';
 import { cn, formatFullName } from '@/lib/utils';
 import {
   SearchableCombobox,
@@ -50,8 +49,24 @@ function createSchema(gameTypes: GameTypeOption[]) {
         .max(2, 'Initials combination must be 2 characters')
         .min(2, 'Initials combination is required'),
       notes: z.string().trim().optional(),
-      videoUrl: z.string().trim().url().refine((v) => v.startsWith('https://'), { message: 'URL must use https' }).optional().or(z.literal('')),
-      audioUrl: z.string().trim().url().refine((v) => v.startsWith('https://'), { message: 'URL must use https' }).optional().or(z.literal('')),
+      videoUrl: z
+        .string()
+        .trim()
+        .url()
+        .refine((v) => v.startsWith('https://'), {
+          message: 'URL must use https',
+        })
+        .optional()
+        .or(z.literal('')),
+      audioUrl: z
+        .string()
+        .trim()
+        .url()
+        .refine((v) => v.startsWith('https://'), {
+          message: 'URL must use https',
+        })
+        .optional()
+        .or(z.literal('')),
       locationId: z.number().int().min(1, 'Location is required'),
       gameTypeIds: z
         .array(z.number().int().positive())
@@ -265,8 +280,6 @@ type LocationOption = {
   name: string;
 };
 
-type TranscribeState = 'idle' | 'queued' | 'processing' | 'error';
-
 interface AddGameFormProps {
   participants: ParticipantOption[];
   gameTypes: GameTypeOption[];
@@ -322,7 +335,9 @@ function createDefaultValues(): GameFormData {
         gameItemTypeId: 1,
         fallbackAnswer: '',
         clues: [{ clue: '', isNotCompleted: false }],
-        guesses: [{ playerId: 0, guess: '', clueHeard: '', isIncorrect: false }],
+        guesses: [
+          { playerId: 0, guess: '', clueHeard: '', isIncorrect: false },
+        ],
       },
     ],
   };
@@ -330,7 +345,11 @@ function createDefaultValues(): GameFormData {
 
 function displayParticipant(participant: ParticipantOption) {
   const nickname = participant.nickname?.trim();
-  const base = formatFullName(participant.firstName, participant.middleName, participant.lastName);
+  const base = formatFullName(
+    participant.firstName,
+    participant.middleName,
+    participant.lastName,
+  );
   return nickname ? `${base} (${nickname})` : base;
 }
 
@@ -344,7 +363,6 @@ interface GameItemFieldsProps {
   register: ReturnType<typeof useForm<GameFormData>>['register'];
   setValue: ReturnType<typeof useForm<GameFormData>>['setValue'];
   errors: ReturnType<typeof useForm<GameFormData>>['formState']['errors'];
-  uncertainFields: Set<string>;
 }
 
 function GameItemFields({
@@ -357,11 +375,7 @@ function GameItemFields({
   register,
   setValue,
   errors,
-  uncertainFields,
 }: GameItemFieldsProps) {
-  const uncertainCls = (path: string) =>
-    uncertainFields.has(path) ? 'ring-2 ring-amber-500 ring-offset-1' : '';
-
   const [isItemRemoveDialogOpen, setIsItemRemoveDialogOpen] = useState(false);
   const [clueToRemoveIndex, setClueToRemoveIndex] = useState<number | null>(
     null,
@@ -443,7 +457,6 @@ function GameItemFields({
             id={`items.${itemIndex}.gameItemTypeId`}
             className={cn(
               'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm',
-              uncertainCls(`items.${itemIndex}.gameItemTypeId`),
             )}
             {...register(`items.${itemIndex}.gameItemTypeId`, {
               valueAsNumber: true,
@@ -484,7 +497,6 @@ function GameItemFields({
               <Input
                 id={`items.${itemIndex}.clues.${clueIndex}.clue`}
                 autoComplete="off"
-                className={uncertainCls(`items.${itemIndex}.clues.${clueIndex}.clue`)}
                 {...register(`items.${itemIndex}.clues.${clueIndex}.clue`)}
               />
               {errors.items?.[itemIndex]?.clues?.[clueIndex]?.clue && (
@@ -559,7 +571,7 @@ function GameItemFields({
                 control={control}
                 name={`items.${itemIndex}.guesses.${guessIndex}.playerId`}
                 render={({ field }) => (
-                  <div className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.playerId`)}>
+                  <div>
                     <SearchableCombobox
                       value={field.value}
                       onChange={field.onChange}
@@ -588,7 +600,6 @@ function GameItemFields({
               </label>
               <Input
                 id={`items.${itemIndex}.guesses.${guessIndex}.guess`}
-                className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.guess`)}
                 {...register(`items.${itemIndex}.guesses.${guessIndex}.guess`)}
               />
             </div>
@@ -602,8 +613,9 @@ function GameItemFields({
               </label>
               <Input
                 id={`items.${itemIndex}.guesses.${guessIndex}.clueHeard`}
-                className={uncertainCls(`items.${itemIndex}.guesses.${guessIndex}.clueHeard`)}
-                {...register(`items.${itemIndex}.guesses.${guessIndex}.clueHeard`)}
+                {...register(
+                  `items.${itemIndex}.guesses.${guessIndex}.clueHeard`,
+                )}
                 placeholder="Leave blank if full clue was heard"
               />
             </div>
@@ -964,14 +976,6 @@ export function AddGameForm({
   const [playerSponsorToRemoveIndex, setPlayerSponsorToRemoveIndex] = useState<
     number | null
   >(null);
-
-  const [transcribeState, setTranscribeState] = useState<TranscribeState>('idle');
-  const [transcribeJobId, setTranscribeJobId] = useState<string | null>(null);
-  const [transcribeError, setTranscribeError] = useState<string | null>(null);
-  const [transcribeElapsed, setTranscribeElapsed] = useState(0);
-  const [uncertainFields, setUncertainFields] = useState<Set<string>>(new Set());
-  const [rawTranscript, setRawTranscript] = useState<string | null>(null);
-
   const isCreateMode = !defaultValues;
 
   const schema = useMemo(() => createSchema(gameTypes), [gameTypes]);
@@ -987,7 +991,9 @@ export function AddGameForm({
     formState: { errors, isSubmitting, isDirty },
   } = useForm<GameFormData>({
     resolver: zodResolver(schema),
-    defaultValues: isCreateMode ? (loadDraft() ?? createDefaultValues()) : defaultValues,
+    defaultValues: isCreateMode
+      ? (loadDraft() ?? createDefaultValues())
+      : defaultValues,
   });
 
   // Warn about unsaved changes when navigating away
@@ -1037,7 +1043,8 @@ export function AddGameForm({
   const isMajorGame = useMemo(
     () =>
       gameTypes.some(
-        (gt) => (watchedGameTypeIds ?? []).includes(gt.id) && gt.type === 'major',
+        (gt) =>
+          (watchedGameTypeIds ?? []).includes(gt.id) && gt.type === 'major',
       ),
     [gameTypes, watchedGameTypeIds],
   );
@@ -1125,95 +1132,6 @@ export function AddGameForm({
     );
   };
 
-  function applyExtraction(extraction: ExtractionResult) {
-    setUncertainFields(new Set(extraction.uncertainFields));
-    setRawTranscript(extraction.rawTranscript);
-    const { data } = extraction;
-
-    if (data.gameNumber !== undefined) setValue('gameNumber', data.gameNumber);
-    if (data.hostParticipantId !== undefined) setValue('hostParticipantId', data.hostParticipantId);
-    if (data.playerIds !== undefined) setValue('playerIds', data.playerIds);
-    if (data.items !== undefined) {
-      itemArray.replace(
-        data.items.map((item) => ({
-          gameItemTypeId: item.gameItemTypeId,
-          fallbackAnswer: item.fallbackAnswer ?? '',
-          clues: item.clues,
-          guesses: item.guesses.map((g) => ({
-            playerId: g.playerId,
-            guess: g.guess ?? '',
-            clueHeard: g.clueHeard ?? '',
-            isIncorrect: g.isIncorrect,
-            clueNumber: g.clueNumber,
-          })),
-        })),
-      );
-    }
-    if (data.includeJackpot !== undefined) setValue('includeJackpot', data.includeJackpot);
-    if (data.jackpot) {
-      if (data.jackpot.oneCorrect !== undefined) setValue('jackpot.oneCorrect', data.jackpot.oneCorrect);
-      if (data.jackpot.bothCorrect !== undefined) setValue('jackpot.bothCorrect', data.jackpot.bothCorrect);
-      if (data.jackpot.callerName !== undefined) setValue('jackpot.callerName', data.jackpot.callerName);
-      if (data.jackpot.callerGuessInitialsCombination !== undefined) {
-        setValue('jackpot.callerGuessInitialsCombination', data.jackpot.callerGuessInitialsCombination);
-      }
-    }
-  }
-
-  const handleTranscribe = async () => {
-    const audioUrl = getValues('audioUrl');
-    if (!audioUrl) return;
-    setTranscribeState('queued');
-    setTranscribeJobId(null);
-    setTranscribeError(null);
-    setTranscribeElapsed(0);
-    try {
-      const { jobId } = await startTranscription(audioUrl);
-      setTranscribeJobId(jobId);
-      setTranscribeState('processing');
-    } catch (err) {
-      setTranscribeState('error');
-      setTranscribeError(err instanceof Error ? err.message : 'Failed to start transcription');
-    }
-  };
-
-  useEffect(() => {
-    if (!transcribeJobId || (transcribeState !== 'queued' && transcribeState !== 'processing')) {
-      return;
-    }
-
-    const interval = setInterval(async () => {
-      setTranscribeElapsed((s) => s + 5);
-      try {
-        const result = await pollTranscription(transcribeJobId);
-        if (result.status === 'pending') return;
-
-        clearInterval(interval);
-        if (result.status === 'error') {
-          setTranscribeState('error');
-          setTranscribeError(result.message);
-          return;
-        }
-
-        applyExtraction(result.extraction);
-        setTranscribeState('idle');
-        toast.success('Transcript applied! Review highlighted fields.');
-      } catch (err) {
-        clearInterval(interval);
-        setTranscribeState('error');
-        setTranscribeError(err instanceof Error ? err.message : 'Polling failed');
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-    // applyExtraction is omitted — it captures itemArray and setValue which are stable
-    // react-hook-form references; wrapping in useCallback would not change behavior.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcribeJobId, transcribeState]);
-
-  const uncertainCls = (path: string) =>
-    uncertainFields.has(path) ? 'ring-2 ring-amber-500 ring-offset-1' : '';
-
   const onError = (errors: FieldErrors<GameFormData>) => {
     console.error('Validation errors:', errors);
     const errorMessages = Object.entries(errors)
@@ -1283,7 +1201,11 @@ export function AddGameForm({
         return;
       }
 
-      toast.success(mode === 'edit' ? 'Game updated successfully!' : 'Game saved successfully!');
+      toast.success(
+        mode === 'edit'
+          ? 'Game updated successfully!'
+          : 'Game saved successfully!',
+      );
 
       if (mode === 'edit') {
         router.push('/admin/games');
@@ -1323,7 +1245,6 @@ export function AddGameForm({
                   min={1}
                   className={cn(
                     'w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm',
-                    uncertainCls('gameNumber'),
                   )}
                   {...register('gameNumber', { valueAsNumber: true })}
                 />
@@ -1352,7 +1273,7 @@ export function AddGameForm({
                   control={control}
                   name="hostParticipantId"
                   render={({ field }) => (
-                    <div className={uncertainCls('hostParticipantId')}>
+                    <div>
                       <SearchableCombobox
                         value={field.value}
                         onChange={field.onChange}
@@ -1447,7 +1368,7 @@ export function AddGameForm({
                 control={control}
                 name="playerIds"
                 render={({ field }) => (
-                  <div className={uncertainCls('playerIds')}>
+                  <div>
                     <SearchableMultiCombobox
                       values={field.value}
                       valueType="player"
@@ -1498,39 +1419,11 @@ export function AddGameForm({
                     placeholder="https://..."
                     {...register('audioUrl')}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    disabled={
-                      !watchedAudioUrl ||
-                      transcribeState === 'queued' ||
-                      transcribeState === 'processing'
-                    }
-                    onClick={handleTranscribe}
-                  >
-                    {transcribeState === 'queued' || transcribeState === 'processing' ? (
-                      <>
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        Transcribing… ({transcribeElapsed}s)
-                      </>
-                    ) : (
-                      'Transcribe & Fill'
-                    )}
-                  </Button>
                 </div>
-                {transcribeState === 'error' && (
-                  <div className="flex items-center gap-1.5 text-xs text-destructive">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span>{transcribeError}</span>
-                    <button type="button" className="underline" onClick={handleTranscribe}>
-                      Retry
-                    </button>
-                  </div>
-                )}
                 {errors.audioUrl && (
-                  <p className="text-xs text-destructive">{errors.audioUrl.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.audioUrl.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -1701,7 +1594,6 @@ export function AddGameForm({
                     id="jackpot.oneCorrect"
                     type="number"
                     min={0}
-                    className={uncertainCls('jackpot.oneCorrect')}
                     {...register('jackpot.oneCorrect', { valueAsNumber: true })}
                   />
                 </div>
@@ -1717,7 +1609,6 @@ export function AddGameForm({
                     id="jackpot.bothCorrect"
                     type="number"
                     min={0}
-                    className={uncertainCls('jackpot.bothCorrect')}
                     {...register('jackpot.bothCorrect', {
                       valueAsNumber: true,
                     })}
@@ -1733,7 +1624,6 @@ export function AddGameForm({
                   </label>
                   <Input
                     id="jackpot.callerName"
-                    className={uncertainCls('jackpot.callerName')}
                     {...register('jackpot.callerName')}
                   />
                 </div>
@@ -1747,7 +1637,6 @@ export function AddGameForm({
                   </label>
                   <Input
                     id="jackpot.callerGuessInitialsCombination"
-                    className={uncertainCls('jackpot.callerGuessInitialsCombination')}
                     {...register('jackpot.callerGuessInitialsCombination')}
                   />
                 </div>
@@ -1782,7 +1671,6 @@ export function AddGameForm({
                   register={register}
                   setValue={setValue}
                   errors={errors}
-                  uncertainFields={uncertainFields}
                 />
               ))}
             </div>
@@ -1794,7 +1682,14 @@ export function AddGameForm({
                     gameItemTypeId: 1,
                     fallbackAnswer: '',
                     clues: [{ clue: '', isNotCompleted: false }],
-                    guesses: [{ playerId: 0, guess: '', clueHeard: '', isIncorrect: false }],
+                    guesses: [
+                      {
+                        playerId: 0,
+                        guess: '',
+                        clueHeard: '',
+                        isIncorrect: false,
+                      },
+                    ],
                   })
                 }
               >
@@ -1871,15 +1766,6 @@ export function AddGameForm({
             )}
           </section>
 
-          {rawTranscript && (
-            <details className="rounded-lg border p-3 text-sm">
-              <summary className="cursor-pointer font-medium">Raw Transcript</summary>
-              <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap text-xs text-muted-foreground">
-                {rawTranscript}
-              </pre>
-            </details>
-          )}
-
           {serverError && (
             <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {serverError}
@@ -1911,10 +1797,18 @@ export function AddGameForm({
                 Clear Draft
               </Button>
             )}
-            <Button type="submit" className={mode === 'edit' ? 'flex-1' : 'w-full'} disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className={mode === 'edit' ? 'flex-1' : 'w-full'}
+              disabled={isSubmitting}
+            >
               {isSubmitting
-                ? mode === 'edit' ? 'Saving Changes…' : 'Saving Game…'
-                : mode === 'edit' ? 'Save Changes' : 'Save Game'}
+                ? mode === 'edit'
+                  ? 'Saving Changes…'
+                  : 'Saving Game…'
+                : mode === 'edit'
+                  ? 'Save Changes'
+                  : 'Save Game'}
             </Button>
           </div>
         </form>
