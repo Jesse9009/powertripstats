@@ -14,9 +14,11 @@ export const participants = sqliteTable("participants", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   firstName: text("first_name").notNull(),
   middleName: text("middle_name"),
-  lastName: text("last_name").notNull(),
+  lastName: text("last_name"),
+  suffix: text("suffix"),
   nickname: text("nickname"),
   imageUrl: text("image_url"),
+  isRube: integer("is_rube", { mode: "boolean" }).notNull().default(false),
 });
 
 export const initialCombinations = sqliteTable("initial_combinations", {
