@@ -51,7 +51,7 @@ import { participants } from './schema.mjs';
 
 const db = assertDb();
 // Seed participants from array
-const seedParticipants = [];
+const seedParticipants: string[] = [];
 
 (async () => {
   for (const name of seedParticipants) {

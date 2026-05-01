@@ -8,11 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 export function formatFullName(
   firstName: string,
   middleName: string | null | undefined,
-  lastName: string,
+  lastName: string | null | undefined,
 ): string {
-  return middleName?.trim()
-    ? `${firstName} ${middleName} ${lastName}`
-    : `${firstName} ${lastName}`;
+  const safeLastName = lastName?.trim() ?? '';
+
+  if (middleName?.trim()) {
+    return safeLastName
+      ? `${firstName} ${middleName} ${safeLastName}`
+      : `${firstName} ${middleName}`;
+  }
+
+  return safeLastName ? `${firstName} ${safeLastName}` : firstName;
 }
 
 export function formatGameDateUTC(date: Date | number | string): string {

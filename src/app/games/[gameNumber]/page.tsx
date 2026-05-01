@@ -29,7 +29,7 @@ export default async function GamePage({ params }: PageProps) {
         gameNumber={game.gameNumber}
         gameDate={game.gameDate}
         hostFirstName={game.hostFirstName}
-        hostLastName={game.hostLastName}
+        hostLastName={game.hostLastName ?? ''}
         hostNickname={game.hostNickname}
         initialsCombination={game.initialsCombination}
         locationName={game.locationName ?? null}

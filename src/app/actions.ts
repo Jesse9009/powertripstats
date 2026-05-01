@@ -33,6 +33,20 @@ import {
 
 const db = getDb();
 
+type GameFormOptions = {
+  participants: {
+    id: number;
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    nickname: string;
+  }[];
+  gameTypes: { id: number; type: string }[];
+  gameItemTypes: { id: number; type: string }[];
+  sponsors: { id: number; name: string }[];
+  locations: { id: number; name: string }[];
+};
+
 export async function getParticipants(limit: number = 20, offset: number = 0) {
   return await db
     ?.select()
@@ -50,8 +64,12 @@ export async function getTotalParticipants() {
 }
 
 export async function getGames(limit: number = 20, offset: number = 0) {
-  return await db
-    ?.select({
+  if (!db) {
+    return [];
+  }
+
+  const gamesData = await db
+    .select({
       id: games.id,
       gameNumber: games.gameNumber,
       gameDate: games.gameDate,
@@ -124,6 +142,11 @@ export async function getGames(limit: number = 20, offset: number = 0) {
     .orderBy(asc(games.gameDate), desc(games.id))
     .limit(limit)
     .offset(offset);
+
+  return gamesData.map((game) => ({
+    ...game,
+    hostLastName: game.hostLastName ?? '',
+  }));
 }
 
 export async function getTotalGames() {
@@ -134,7 +157,7 @@ export async function getTotalGames() {
   return await db.select({ total: count() }).from(games);
 }
 
-export async function getGameFormOptions() {
+export async function getGameFormOptions(): Promise<GameFormOptions> {
   if (!db) {
     return {
       participants: [],
@@ -180,8 +203,15 @@ export async function getGameFormOptions() {
       .orderBy(asc(locations.id)),
   ]);
 
+  const participantOptions = participantsResult.map((participant) => ({
+    ...participant,
+    middleName: participant.middleName ?? '',
+    lastName: participant.lastName ?? '',
+    nickname: participant.nickname ?? '',
+  }));
+
   return {
-    participants: participantsResult,
+    participants: participantOptions,
     gameTypes: gameTypesResult,
     gameItemTypes: gameItemTypesResult,
     sponsors: sponsorsResult,
